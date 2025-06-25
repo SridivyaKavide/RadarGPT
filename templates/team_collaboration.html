@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Collaboration - PainRadar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    html, body {
+      min-height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+    .center-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin-left: var(--side-nav-width);
+      padding-bottom: 120px;
+      width: calc(100% - var(--side-nav-width));
+      transition: margin-left var(--transition), width var(--transition);
+    }
+    .title-header {
+      font-size: 2.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg,#fff,#aaa,#fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+      margin-top: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+    .main-content-area {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: min-height 0.3s;
+    }
+    .team-container {
+      display: flex;
+      width: 100%;
+      gap: 2rem;
+    }
+    .team-list {
+      width: 250px;
+      background: rgba(16,26,35,0.98);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px rgba(0,255,247,0.10), 0 0 0 1.5px #192d3a;
+      padding: 1.5rem;
+    }
+    .team-list h2 {
+      color: #00fff7;
+      font-size: 1.3rem;
+      margin-bottom: 1.1rem;
+      text-align: left;
+    }
+    .team-item {
+      background: #101e2b;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .team-item:hover {
+      background: #152a3d;
+    }
+    .team-item.active {
+      background: rgba(0, 255, 247, 0.2);
+      border: 1px solid rgba(0, 255, 247, 0.4);
+    }
+    .team-name {
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 0.3rem;
+    }
+    .team-meta {
+      font-size: 0.8rem;
+      color: #b0faff;
+    }
+    .create-team-btn {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 1rem;
+      transition: all 0.2s;
+    }
+    .create-team-btn:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      box-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
+    }
+    .team-detail {
+      flex: 1;
+      background: rgba(16,26,35,0.98);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px rgba(0,255,247,0.10), 0 0 0 1.5px #192d3a;
+      padding: 1.5rem;
+    }
+    .team-detail h2 {
+      color: #00fff7;
+      font-size: 1.3rem;
+      margin-bottom: 1.1rem;
+      text-align: left;
+    }
+    .team-detail-empty {
+      color: #b0faff;
+      text-align: center;
+      padding: 3rem 0;
+    }
+    .team-members {
+      margin-bottom: 2rem;
+    }
+    .team-members h3 {
+      color: #5e9fd4;
+      margin-bottom: 0.8rem;
+    }
+    .member-list {
+      background: #101e2b;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .member-item:last-child {
+      border-bottom: none;
+    }
+    .member-name {
+      font-weight: bold;
+    }
+    .member-role {
+      color: #5e9fd4;
+      font-size: 0.9rem;
+    }
+    .add-member-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .add-member-input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: 1px solid rgba(0, 255, 247, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+    }
+    .add-member-btn {
+      background: #00fff7;
+      color: #001f2f;
+      border: none;
+      border-radius: 5px;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .shared-queries {
+      margin-bottom: 2rem;
+    }
+    .shared-queries h3 {
+      color: #5e9fd4;
+      margin-bottom: 0.8rem;
+    }
+    .query-list {
+      background: #101e2b;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .query-item {
+      padding: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+    .query-item:hover {
+      background: rgba(0, 255, 247, 0.1);
+    }
+    .query-item:last-child {
+      border-bottom: none;
+    }
+    .query-keyword {
+      font-weight: bold;
+      margin-bottom: 0.3rem;
+    }
+    .query-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #b0faff;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #0b1c26;
+      border-radius: 18px;
+      box-shadow: 0 0 20px rgba(0, 255, 247, 0.3);
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-title {
+      color: #00fff7;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .form-label {
+      color: #b0faff;
+    }
+    .form-input {
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 247, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+    }
+    .form-submit {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8rem;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .form-submit:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+    }
+    .comments-section {
+      margin-top: 2rem;
+    }
+    .comments-section h3 {
+      color: #5e9fd4;
+      margin-bottom: 0.8rem;
+    }
+    .comments-list {
+      background: #101e2b;
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .comment-item {
+      padding: 0.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .comment-item:last-child {
+      border-bottom: none;
+    }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .comment-author {
+      font-weight: bold;
+    }
+    .comment-date {
+      font-size: 0.8rem;
+      color: #b0faff;
+    }
+    .comment-text {
+      color: #e7faff;
+    }
+    .add-comment-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .add-comment-input {
+      flex: 1;
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 247, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      resize: none;
+      min-height: 80px;
+    }
+    .add-comment-btn {
+      background: #00fff7;
+      color: #001f2f;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="star-bg-canvas"></canvas>
+ 
+  <div class="side-nav">
+    <a href="/"><img src="https://img.icons8.com/ios-filled/50/home.png"/><span>Home</span></a><br>
+    <a href="/radargpt"><img src="https://img.icons8.com/ios-filled/50/globe.png"/><span>RadarGPT</span></a><br>
+    <a href="/app"><img src="https://img.icons8.com/ios-filled/50/search.png"/><span>FindRadar</span></a><br>
+    <a href="/saved"><img src="https://img.icons8.com/ios-filled/50/bookmark.png"/><span>Saved</span></a><br>
+    <a href="/teams"><img src="https://img.icons8.com/ios-filled/50/group.png"/><span>Teams</span></a><br>
+  </div>
+
+  <div class="center-main" id="center-main">
+    <div class="title-header">Team Collaboration</div>
+    <div class="main-content-area" id="main-content-area">
+      <div class="team-container">
+        <div class="team-list">
+          <h2>Your Teams</h2>
+          <div id="teams-container">
+            <!-- Teams will be loaded here -->
+            <div class="team-item">
+              <div class="team-name">Loading teams...</div>
+            </div>
+          </div>
+          <button class="create-team-btn" id="create-team-btn">Create New Team</button>
+        </div>
+        <div class="team-detail" id="team-detail">
+          <div class="team-detail-empty">
+            Select a team to view details
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Team Modal -->
+  <div class="modal" id="create-team-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Create New Team</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="create-team-form">
+        <div class="form-group">
+          <label class="form-label">Team Name</label>
+          <input type="text" class="form-input" id="team-name-input" placeholder="Enter team name" required>
+        </div>
+        <button type="submit" class="form-submit">Create Team</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div class="modal" id="add-member-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Add Team Member</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="add-member-form">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-input" id="member-username-input" placeholder="Enter username" required>
+        </div>
+        <button type="submit" class="form-submit">Add Member</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Star background animation
+    const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [], STAR_COUNT = 180;
+    function resize() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+    window.addEventListener('resize', resize); resize();
+    function randomStar() { return { x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3, dx: (Math.random() - 0.5) * 0.08, dy: (Math.random() - 0.5) * 0.08, twinkle: Math.random() * Math.PI * 2 }; }
+    function createStars() { stars = []; for (let i = 0; i < STAR_COUNT; i++) stars.push(randomStar()); }
+    function drawStars() { ctx.clearRect(0, 0, w, h); for (let star of stars) { star.twinkle += 0.03; let opacity = 0.6 + 0.4 * Math.sin(star.twinkle); ctx.save(); ctx.globalAlpha = opacity; ctx.beginPath(); ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6; ctx.fill(); ctx.restore(); star.x += star.dx; star.y += star.dy; if (star.x < 0) star.x = w; if (star.x > w) star.x = 0; if (star.y < 0) star.y = h; if (star.y > h) star.y = 0; } requestAnimationFrame(drawStars);}
+    createStars(); drawStars();
+
+    // Modal functionality
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modals when clicking close button
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modal = this.closest('.modal');
+        modal.style.display = 'none';
+      });
+    });
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+    });
+
+    // Create team button
+    document.getElementById('create-team-btn').addEventListener('click', function() {
+      openModal('create-team-modal');
+    });
+
+    // Create team form submission
+    document.getElementById('create-team-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const teamName = document.getElementById('team-name-input').value.trim();
+      
+      if (!teamName) return;
+      
+      fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: teamName })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        // Close modal and reset form
+        closeModal('create-team-modal');
+        document.getElementById('team-name-input').value = '';
+        
+        // Reload teams
+        loadTeams();
+      })
+      .catch(error => {
+        alert('Error creating team: ' + error.message);
+      });
+    });
+
+    // Load teams
+    function loadTeams() {
+      fetch('/api/teams')
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById('teams-container').innerHTML = `
+              <div class="team-item">
+                <div class="team-name">Error loading teams</div>
+              </div>
+            `;
+            return;
+          }
+          
+          if (!data.teams || data.teams.length === 0) {
+            document.getElementById('teams-container').innerHTML = `
+              <div class="team-item">
+                <div class="team-name">No teams yet</div>
+                <div class="team-meta">Create your first team</div>
+              </div>
+            `;
+            return;
+          }
+          
+          document.getElementById('teams-container').innerHTML = data.teams.map(team => `
+            <div class="team-item" data-team-id="${team.id}">
+              <div class="team-name">${team.name}</div>
+              <div class="team-meta">Created: ${new Date(team.created_at).toLocaleDateString()}</div>
+            </div>
+          `).join('');
+          
+          // Add click event to team items
+          document.querySelectorAll('.team-item[data-team-id]').forEach(item => {
+            item.addEventListener('click', function() {
+              const teamId = this.getAttribute('data-team-id');
+              loadTeamDetails(teamId);
+              
+              // Mark as active
+              document.querySelectorAll('.team-item').forEach(i => i.classList.remove('active'));
+              this.classList.add('active');
+            });
+          });
+        })
+        .catch(error => {
+          document.getElementById('teams-container').innerHTML = `
+            <div class="team-item">
+              <div class="team-name">Error loading teams</div>
+              <div class="team-meta">${error.message}</div>
+            </div>
+          `;
+        });
+    }
+
+    // Load team details
+    function loadTeamDetails(teamId) {
+      // Load team members
+      fetch(`/api/teams/${teamId}/members`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById('team-detail').innerHTML = `
+              <h2>Error</h2>
+              <p>${data.error}</p>
+            `;
+            return;
+          }
+          
+          const members = data.members || [];
+          const isAdmin = members.some(m => m.id === getCurrentUserId() && m.role === 'admin');
+          
+          document.getElementById('team-detail').innerHTML = `
+            <h2>${document.querySelector(`.team-item[data-team-id="${teamId}"] .team-name`).textContent}</h2>
+            
+            <div class="team-members">
+              <h3>Team Members</h3>
+              <div class="member-list">
+                ${members.map(member => `
+                  <div class="member-item">
+                    <div class="member-name">${member.username}</div>
+                    <div class="member-role">${member.role}</div>
+                  </div>
+                `).join('') || '<p>No members yet</p>'}
+              </div>
+              ${isAdmin ? `
+                <div class="add-member-form">
+                  <input type="text" class="add-member-input" id="add-member-input" placeholder="Username">
+                  <button class="add-member-btn" id="add-member-btn" data-team-id="${teamId}">Add</button>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="shared-queries">
+              <h3>Shared Queries</h3>
+              <div class="query-list" id="shared-queries-list">
+                <p>Loading shared queries...</p>
+              </div>
+            </div>
+          `;
+          
+          // Add event listener to add member button
+          const addMemberBtn = document.getElementById('add-member-btn');
+          if (addMemberBtn) {
+            addMemberBtn.addEventListener('click', function() {
+              const username = document.getElementById('add-member-input').value.trim();
+              if (!username) return;
+              
+              fetch(`/api/teams/${teamId}/members`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username })
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.error) {
+                  alert(data.error);
+                  return;
+                }
+                
+                // Reload team details
+                loadTeamDetails(teamId);
+              })
+              .catch(error => {
+                alert('Error adding member: ' + error.message);
+              });
+            });
+          }
+          
+          // Load shared queries
+          loadSharedQueries(teamId);
+        })
+        .catch(error => {
+          document.getElementById('team-detail').innerHTML = `
+            <h2>Error</h2>
+            <p>Error loading team details: ${error.message}</p>
+          `;
+        });
+    }
+
+    // Load shared queries
+    function loadSharedQueries(teamId) {
+      // This would be implemented in a real application
+      // For now, just show a placeholder
+      document.getElementById('shared-queries-list').innerHTML = `
+        <div class="query-item">
+          <div class="query-keyword">Example Query: AI in Healthcare</div>
+          <div class="query-meta">
+            <span>Shared by: johndoe</span>
+            <span>2023-05-15</span>
+          </div>
+        </div>
+        <div class="query-item">
+          <div class="query-keyword">Example Query: Fintech Trends</div>
+          <div class="query-meta">
+            <span>Shared by: janedoe</span>
+            <span>2023-05-10</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Helper function to get current user ID
+    function getCurrentUserId() {
+      // In a real application, this would come from the session
+      return 1; // Placeholder
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTeams();
+    });
+  </script>
+</body>
+</html>

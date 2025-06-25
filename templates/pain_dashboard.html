@@ -1,0 +1,2705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pain Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="static/findradar-db.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --history-width: 210px;
+      --collapsed-history-width: 0px;
+      --search-max-width: 1100px;
+      --search-bottom: 20px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    .fixed-title {
+      position: static;
+      top: 2.5rem;
+      left: 0;
+      width: 100vw;
+      z-index: 40;
+      text-align: center;
+      pointer-events: none;
+    }
+    .fixed-title h1 {
+      display: inline-block;
+      font-size: 2rem;
+      color:rgb(248, 248, 248);
+      letter-spacing: 2px;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      background: linear-gradient(90deg,rgb(249, 249, 249),rgb(254, 254, 254),rgb(244, 246, 246));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      margin-bottom: 0;
+      margin-top: 2.5rem;
+      pointer-events: auto;
+      width: 100%;
+      text-align: center;
+    }
+    .container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      padding-top: 6rem;
+      padding-bottom: 5rem;
+      justify-content: flex-start;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    .container.with-history {
+      margin-left: calc(var(--side-nav-width) + var(--history-width));
+      align-items: flex-start;
+      text-align: left;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    .container.no-history {
+      margin-left: var(--side-nav-width);
+      align-items: flex-start;
+      text-align: left;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+    
+    /* Dashboard specific styles */
+    .pain-card {
+      border-left: 4px solid #dc3545;
+      margin-bottom: 15px;
+      background: rgba(0,255,247,0.09);
+      border: 1.5px solid rgba(0,255,247,0.18);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,255,247,0.08);
+      color: #fff;
+    }
+    .opportunity-card {
+      border-left: 4px solid #198754;
+      margin-bottom: 15px;
+      background: rgba(0,255,247,0.09);
+      border: 1.5px solid rgba(0,255,247,0.18);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,255,247,0.08);
+      color: #fff;
+    }
+    .severity-badge {
+      font-size: 1.2rem;
+      padding: 5px 10px;
+      margin-right: 10px;
+    }
+    .detail-section {
+      background: rgba(0,255,247,0.07);
+      border: 1.5px solid rgba(0,255,247,0.17);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+    .detail-header {
+      font-weight: 600;
+      color: #00b8d4;
+      margin-bottom: 10px;
+    }
+    .user-segment {
+      display: inline-block;
+      background: rgba(0,0,0,0.3);
+      padding: 3px 8px;
+      border-radius: 15px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      border: 1px solid rgba(0,255,247,0.2);
+    }
+    .metric-item {
+      padding: 8px;
+      background: rgba(0,255,247,0.05);
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+    .raw-json {
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: rgba(0,255,247,0.05);
+      padding: 10px;
+      border-radius: 5px;
+      color: #e7faff;
+    }
+    .mvp-preview {
+      border: 1px solid rgba(0,255,247,0.2);
+      border-radius: 5px;
+      padding: 20px;
+      background: rgba(0,0,0,0.3);
+    }
+    .tab-content {
+      padding: 20px 0;
+    }
+    
+    .card {
+      background: rgba(0,255,247,0.09);
+      border: 1.5px solid rgba(0,255,247,0.18);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,255,247,0.08);
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      border-bottom: 1px solid rgba(0,255,247,0.2);
+      padding: 15px;
+      font-weight: bold;
+    }
+    .card-body {
+      padding: 15px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      padding: 0.6em 1.2em;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.12);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+    }
+    
+    .form-control, .form-select {
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      border: 1.5px solid rgba(0,255,247,0.18);
+      border-radius: 18px;
+      padding: 0.5rem 1rem;
+      font-family: 'Poppins', sans-serif;
+      outline: none;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(0,255,247,0.08);
+    }
+    .form-control:focus, .form-select:focus {
+      border: 1.5px solid #00fff7;
+      box-shadow: 0 0 10px #00fff7, 0 0 20px #5e9fd4;
+    }
+    
+    .nav-tabs-horizontal {
+      border-bottom: 1px solid rgba(0,255,247,0.2);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,255,247,0.5) rgba(0,0,0,0.2);
+    }
+    .nav-tabs-horizontal::-webkit-scrollbar {
+      height: 4px;
+    }
+    .nav-tabs-horizontal::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+    }
+    .nav-tabs-horizontal::-webkit-scrollbar-thumb {
+      background: rgba(0,255,247,0.5);
+      border-radius: 10px;
+    }
+    .nav-tabs-horizontal .btn {
+      transition: all 0.3s ease;
+    }
+    .nav-tabs-horizontal .btn:hover {
+      color: #00fff7;
+      background: rgba(0,255,247,0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,255,247,0.2);
+    }
+    .nav-tabs-horizontal .btn.active {
+      color: #00fff7;
+      background: rgba(0,255,247,0.2);
+      box-shadow: 0 4px 15px rgba(0,255,247,0.3);
+    }
+    
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @keyframes pulseGlow {
+      0% { text-shadow: 0 0 0 #00fff7; }
+      100% { text-shadow: 0 0 24px #00fff7, 0 0 12px #5e9fd4; }
+    }
+    
+    @media (max-width: 1000px) {
+      .container.with-history { margin-left: 0 !important; align-items: flex-start; text-align: left; }
+      .fixed-title { top: 1.2rem; }
+    }
+    @media (max-width: 700px) {
+      .side-nav {
+        width: 48px;
+      }
+      .container.with-history { margin-left: 0 !important; align-items: flex-start; text-align: left; }
+      .fixed-title { top: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="side-nav">
+  <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+    <span>RadarGPT</span>
+  </a><br>
+
+  <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+    <span>Verticals</span>
+  </a><br>
+
+  <a href="/pain-cloud-combined" title="Pain-cloud">
+    <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+    <span>Insights</span>
+  </a><br>
+
+  <a href="/saved" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+    <span>Saved</span>
+  </a><br>
+  
+  <a href="/teams" title="Teams" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/collaboration.png" alt="Teams"/>
+    <span>Teams</span>
+  </a><br>
+  <a href="/integrations" title="Integrations" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/link.png" alt="Integrations"/>
+    <span>Integrate</span>
+  </a>
+</div>
+  
+  <div class="fixed-title">
+    <h1>Pain Dashboard</h1>
+    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center; pointer-events: auto;">
+      <button id="headerExportPdfBtn" class="btn btn-sm" style="background: rgba(0,255,247,0.1); color: #00fff7; border: 1px solid rgba(0,255,247,0.3); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; cursor: pointer;">
+        <i class="bi bi-file-pdf"></i><span style="margin-left: 6px;">Export PDF</span>
+      </button>
+
+      <button id="headerShareUrlBtn" class="btn btn-sm" style="background: rgba(0,255,247,0.1); color: #00fff7; border: 1px solid rgba(0,255,247,0.3); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; cursor: pointer;">
+        <i class="bi bi-share"></i><span style="margin-left: 6px;">Share Link</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="container no-history" id="main-container" style="padding-top: 3.2rem;">
+    <div class="row" style="width: 100%; max-width: 900px; margin: -40px auto 0;">
+      <div class="col-md-12 mb-4">
+        <div class="card" style="margin: 0 auto;">
+          <div class="card-header">
+            <h5 class="mb-0">Pain Analysis: <span id="queryTitle"></span></h5>
+          </div>
+          <div class="card-body">
+            <form id="queryForm" class="d-flex flex-column align-items-center w-100">
+              <div class="d-flex w-100 justify-content-center mb-3" style="max-width: 700px; margin: 0 auto;">
+                <select id="verticalSelect" class="form-select me-2" style="max-width: 300px;" required>
+                  <option value="">Select Vertical</option>
+                  <option value="fintech">Financial Technology</option>
+                  <option value="healthcare">Healthcare & Medical</option>
+                  <option value="ecommerce">E-Commerce & Retail</option>
+                  <option value="saas">Software as a Service</option>
+                  <option value="edtech">Education Technology</option>
+                </select>
+                <input type="text" id="queryInput" class="form-control mx-2" placeholder="Enter your query" required>
+                <button type="submit" class="btn btn-primary ms-2" id="analyzeBtn" style="min-width: 120px;">
+                  <i class="bi bi-search"></i> Analyze
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+        <!-- Added gap between input box and output -->
+    <div style="height: 40px;"></div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes pulse {
+                0% { box-shadow: 0 0 0 0 rgba(0, 255, 247, 0.7); }
+                70% { box-shadow: 0 0 0 15px rgba(0, 255, 247, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(0, 255, 247, 0); }
+            }
+            
+            .loading-spinner {
+                width: 80px;
+                height: 80px;
+                border: 4px solid rgba(0,255,247,0.1);
+                border-radius: 50%;
+                border-top: 4px solid #00fff7;
+                animation: spin 1s linear infinite;
+            }
+            
+            .loading-pulse {
+                position: absolute;
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background: rgba(0,255,247,0.1);
+                animation: pulse 2s infinite;
+            }
+        </style>
+        
+        <div id="loadingIndicator" style="display:none; text-align: center; margin: 0 auto;" class="my-5">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; position: relative; width: 100%; margin: 0 auto;">
+                <div class="loading-pulse" style="margin: 0 auto;"></div>
+                <div class="loading-spinner" style="margin: 0 auto;"></div>
+                <p style="margin-top: 30px; color: #00fff7; font-size: 1.2rem; font-weight: 600; text-align: center;">Analyzing data and generating insights...</p>
+                <p style="color: #5e9fd4; font-size: 0.9rem; max-width: 400px; margin: 10px auto 0; text-align: center;">
+                    Our AI is processing your query and extracting valuable pain points and opportunities.
+                </p>
+            </div>
+        </div>
+        
+        <div id="loadingIndicator2" style="display:none; text-align: center; margin: 0 auto;" class="my-5">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; width: 100%; margin: 0 auto;">
+                <div style="width: 80px; height: 80px; border: 4px solid rgba(0,255,247,0.1); border-radius: 50%; border-top: 4px solid #00fff7; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 20px; color: #00fff7; font-size: 1.2rem; text-align: center;">Analyzing data and generating insights...</p>
+            </div>
+        </div>
+        
+        <div class="row" id="resultsContainer" style="display:none; width: 100%; max-width: 1100px;">
+            <div class="col-md-12 mb-4">
+                <div class="card" style="border-radius: 20px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 0 30px rgba(0,255,247,0.15);">
+                    <div class="card-header" style="background: linear-gradient(90deg,rgba(0,255,247,0.2),rgba(94,159,212,0.2)); padding: 15px 20px; border-bottom: 1px solid rgba(0,255,247,0.3);">
+                        <div class="nav-tabs-horizontal" style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 5px; padding-bottom: 5px;">
+                            <button class="btn active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab" aria-controls="summary" aria-selected="true" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,255,247,0.1); color: #00fff7; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-clipboard-data" style="margin-right: 5px;"></i> Summary
+                            </button>
+                            <button class="btn" id="pain-tab" data-bs-toggle="tab" data-bs-target="#pain" type="button" role="tab" aria-controls="pain" aria-selected="false" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,0,0,0.2); color: #b0faff; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-exclamation-triangle" style="margin-right: 5px;"></i> Pain Points
+                            </button>
+                            <button class="btn" id="opportunities-tab" data-bs-toggle="tab" data-bs-target="#opportunities" type="button" role="tab" aria-controls="opportunities" aria-selected="false" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,0,0,0.2); color: #b0faff; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-lightbulb" style="margin-right: 5px;"></i> Opportunities
+                            </button>
+                            <button class="btn" id="mvp-tab" data-bs-toggle="tab" data-bs-target="#mvp" type="button" role="tab" aria-controls="mvp" aria-selected="false" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,0,0,0.2); color: #b0faff; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-rocket" style="margin-right: 5px;"></i> MVP Generator
+                            </button>
+                            <button class="btn" id="sources-tab" data-bs-toggle="tab" data-bs-target="#sources" type="button" role="tab" aria-controls="sources" aria-selected="false" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,0,0,0.2); color: #b0faff; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-link-45deg" style="margin-right: 5px;"></i> Sources
+                            </button>
+                            <button class="btn" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button" role="tab" aria-controls="raw" aria-selected="false" 
+                                style="font-weight: 600; padding: 10px 20px; background: rgba(0,0,0,0.2); color: #b0faff; border: none; border-radius: 10px; white-space: nowrap; flex-shrink: 0;">
+                                <i class="bi bi-code-slash" style="margin-right: 5px;"></i> Raw Data
+                            </button>
+                        </div>
+                    </div>
+                
+                <div class="content-container" id="contentContainer" style="padding: 25px; background: rgba(0,0,0,0.2); border-radius: 0 0 20px 20px;">
+                    <!-- Only one section will be shown at a time -->
+                    <div id="contentArea"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Sidebar -->
+    <!-- Sidebar -->
+<div class="history-sidebar" id="history-sidebar" style="
+  position: fixed;
+  top: 0;
+  left: 80px;
+  width: 210px;
+  height: 100vh;
+  background: rgba(0, 255, 247, 0.07);
+  box-shadow: 2px 0 14px rgba(0, 255, 247, 0.05);
+  border-right: 1.5px solid rgba(0, 255, 247, 0.12);
+  z-index: 19;
+  padding: 1.2rem 0.5rem;
+  overflow-y: auto;
+  gap: 0;
+  align-items: stretch;
+  transition: width 0.3s, left 0.3s, opacity 0.3s, padding 0.3s;
+">
+  <div class="history-title" style="
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #00fff7;
+    margin-bottom: 1rem;
+  ">History</div>
+  <ul class="history-list" id="history-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+</div>
+
+<!-- Toggle Button (moved to right edge of sidebar with margin) -->
+<button class="history-toggle-btn" id="history-toggle-btn" aria-label="Toggle history sidebar" style="
+  position: fixed;
+  top: 20px;
+  left: 300px; /* 210px sidebar + 10px gap + 80px sidebar offset */
+  z-index: 30;
+  background: rgba(0, 255, 247, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: left 0.3s;
+">
+  <svg width="18" height="18" viewBox="0 0 24 24">
+    <path fill="#00fff7" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+  </svg>
+</button>
+
+  <script src="static/radargpt-save-module.js"></script>
+  <script>
+        // Content templates for each tab
+        const contentTemplates = {
+            summary: function(data) {
+                return `
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,247,0.1);">
+                                <div class="card-header" style="background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; padding: 15px 20px; border: none;">
+                                    <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                        <i class="bi bi-bar-chart-fill" style="margin-right: 10px;"></i>
+                                        Pain Point Severity
+                                    </h5>
+                                </div>
+                                <div class="card-body" style="padding: 20px; background: rgba(0,255,247,0.05);">
+                                    <canvas id="painChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,247,0.1);">
+                                <div class="card-header" style="background: linear-gradient(90deg,#5e9fd4,#00fff7); color: #001f2f; padding: 15px 20px; border: none;">
+                                    <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                        <i class="bi bi-info-circle-fill" style="margin-right: 10px;"></i>
+                                        Context
+                                    </h5>
+                                </div>
+                                <div class="card-body" id="contextContainer" style="padding: 20px; background: rgba(0,255,247,0.05);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,247,0.1);">
+                        <div class="card-header" style="background: linear-gradient(90deg,#ff6b6b,#ff8e8e); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-exclamation-diamond-fill" style="margin-right: 10px;"></i>
+                                Top Pain Points
+                            </h5>
+                        </div>
+                        <div class="card-body" style="padding: 20px; background: rgba(0,255,247,0.05);">
+                            <div id="topPainPointsContainer"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,255,247,0.1);">
+                        <div class="card-header" style="background: linear-gradient(90deg,#00d084,#4caf50); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-lightbulb-fill" style="margin-right: 10px;"></i>
+                                Top Opportunities
+                            </h5>
+                        </div>
+                        <div class="card-body" style="padding: 20px; background: rgba(0,255,247,0.05);">
+                            <div id="topOpportunitiesContainer"></div>
+                        </div>
+                    </div>
+                `;
+            },
+            pain: function(data) {
+                return `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#ff6b6b,#ff8e8e); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-exclamation-triangle" style="margin-right: 10px;"></i>
+                                Detailed Pain Point Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="detailedPainContainer"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#90a4ae,#78909c); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-shield-check" style="margin-right: 10px;"></i>
+                                Technical & Regulatory Considerations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="considerationsContainer"></div>
+                        </div>
+                    </div>
+                `;
+            },
+            opportunities: function(data) {
+                return `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#00d084,#4caf50); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-lightbulb" style="margin-right: 10px;"></i>
+                                Detailed Opportunity Analysis
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="detailedOpportunitiesContainer"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#4fc3f7,#29b6f6); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-graph-up" style="margin-right: 10px;"></i>
+                                Success Metrics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="metricsContainer"></div>
+                        </div>
+                    </div>
+                `;
+            },
+            mvp: function(data) {
+                return `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#ff6b6b,#ff8e8e); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-rocket" style="margin-right: 10px;"></i>
+                                1-Click MVP Generator
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="mvpContainer"></div>
+                        </div>
+                    </div>
+                `;
+            },
+            sources: function(data) {
+                let html = '';
+                
+                // StackOverflow section
+                html += `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#0d6efd,#0a58ca); color: #fff; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-stack" style="margin-right: 10px;"></i>
+                                StackOverflow Questions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="stackoverflowContainer"></div>
+                        </div>
+                    </div>
+                `;
+                
+                // Reddit section
+                html += `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#ff6b6b,#ff8e8e); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-reddit" style="margin-right: 10px;"></i>
+                                Reddit Discussions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="redditContainer"></div>
+                        </div>
+                    </div>
+                `;
+                
+                // ComplaintsBoard section
+                html += `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#ffd54f,#ffca28); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-exclamation-circle" style="margin-right: 10px;"></i>
+                                ComplaintsBoard Complaints
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="producthuntContainer"></div>
+                        </div>
+                    </div>
+                `;
+                
+                // Complaints Analysis section (only if available)
+                if (data && data.complaints_analysis) {
+                    html += `
+                        <div class="card mb-4" id="complaintsAnalysisCard">
+                            <div class="card-header" style="background: linear-gradient(90deg,#4fc3f7,#29b6f6); color: #001f2f; padding: 15px 20px; border: none;">
+                                <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                    <i class="bi bi-clipboard-data" style="margin-right: 10px;"></i>
+                                    Complaints Analysis
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="complaintsAnalysisContainer"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return html;
+            },
+            raw: function(data) {
+                return `
+                    <div class="card mb-4">
+                        <div class="card-header" style="background: linear-gradient(90deg,#90a4ae,#78909c); color: #001f2f; padding: 15px 20px; border: none;">
+                            <h5 class="mb-0" style="font-weight: 700; display: flex; align-items: center;">
+                                <i class="bi bi-code-slash" style="margin-right: 10px;"></i>
+                                Raw JSON Data
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <pre id="rawJsonContainer" class="raw-json"></pre>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+        
+        // Global variable to store the current data
+        let currentData = null;
+        
+        // Function to show content for a specific tab
+        function showContent(tabId, data) {
+            const contentArea = document.getElementById('contentArea');
+            const tabName = tabId.replace('-tab', '');
+            
+            if (contentTemplates[tabName]) {
+                contentArea.innerHTML = contentTemplates[tabName](data);
+                
+                // Re-render the specific content
+                if (tabName === 'summary') {
+                    if (data) {
+                        renderContext(data.context);
+                        renderPainChart(data.pain_points);
+                        renderTopPainPoints(data.pain_points);
+                        renderTopOpportunities(data.opportunities);
+                    }
+                } else if (tabName === 'pain') {
+                    if (data) {
+                        renderDetailedPain(data.pain_points);
+                        renderConsiderations(data.considerations);
+                    }
+                } else if (tabName === 'opportunities') {
+                    if (data) {
+                        renderDetailedOpportunities(data.opportunities);
+                        renderMetrics(data.metrics);
+                    }
+                } else if (tabName === 'mvp') {
+                    if (data) {
+                        renderMVPGenerator(data);
+                    }
+                } else if (tabName === 'raw') {
+                    if (data) {
+                        renderRawJson(data);
+                    }
+                }
+            }
+        }
+        
+        // Add tab button click handler to update active state and show content
+        document.querySelectorAll('.nav-tabs-horizontal .btn').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.nav-tabs-horizontal .btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.style.background = 'rgba(0,0,0,0.2)';
+                    btn.style.color = '#b0faff';
+                });
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                this.style.background = 'rgba(0,255,247,0.2)';
+                this.style.color = '#00fff7';
+                
+                // Show content for this tab
+                showContent(this.id, currentData);
+                
+                // Add animation effect
+                const contentArea = document.getElementById('contentArea');
+                contentArea.style.opacity = '0';
+                contentArea.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    contentArea.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    contentArea.style.opacity = '1';
+                    contentArea.style.transform = 'translateY(0)';
+                }, 50);
+                
+                // Handle sources tab special case
+                if (this.id === 'sources-tab' && currentData && currentData.sources) {
+                    setTimeout(() => {
+                        renderSourceData(currentData.sources);
+                        
+                        // Render complaints analysis if available
+                        if (currentData.complaints_analysis) {
+                            const container = document.getElementById('complaintsAnalysisContainer');
+                            if (container) {
+                                container.innerHTML = `<div class="analysis-content">${currentData.complaints_analysis.replace(/\\n/g, '<br>')}</div>`;
+                            }
+                        }
+                    }, 100);
+                }
+            });
+        });
+        
+        // Form submission handler
+        document.getElementById('queryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const vertical = document.getElementById('verticalSelect').value;
+            const query = document.getElementById('queryInput').value;
+            
+            if (!vertical || !query) return;
+            
+            document.getElementById('queryTitle').textContent = `${query} (${vertical})`;
+            
+            // Show loading state
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+            
+            // Call API
+            fetch(`/analyze/${vertical}/${encodeURIComponent(query)}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('loadingIndicator').style.display = 'none';
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Store data globally and show initial content
+                if (data.structured_insights) {
+                    try {
+                        // If structured_insights is a string, try to parse it
+                        if (typeof data.structured_insights === 'string') {
+                            currentData = JSON.parse(data.structured_insights);
+                        } else {
+                            // Otherwise use it directly
+                            currentData = data.structured_insights;
+                        }
+                        // Show the summary tab content by default
+                        showContent('summary-tab', currentData);
+                        // Prepare sources data if available
+                        if (data.sources) {
+                            // Store sources data
+                            currentData.sources = data.sources;
+                        }
+                        // Store complaints analysis if available
+                        if (data.complaints_analysis) {
+                            currentData.complaints_analysis = data.complaints_analysis;
+                        }
+                        // Show results
+                        document.getElementById('resultsContainer').style.display = 'block';
+                        // Scroll to results
+                        document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+                        // --- NEW: Save to history ---
+                        fetch('/api/history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                query: query,
+                                source: 'pain_dashboard',
+                                result: JSON.stringify(currentData),
+                                vertical: vertical
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(() => {
+                            if (typeof loadAndRenderPainDashboardHistory === 'function') {
+                                loadAndRenderPainDashboardHistory();
+                            }
+                        });
+                        // --- END NEW ---
+                    } catch (parseError) {
+                        console.error('Error parsing structured insights:', parseError);
+                        alert('Could not parse structured insights: ' + parseError.message);
+                    }
+                } else {
+                    alert('No structured insights data received from the server.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('loadingIndicator').style.display = 'none';
+                alert('An error occurred while fetching insights: ' + error.message);
+            });
+        });
+        
+        // Add scroll to top/bottom buttons
+        const goTopBtn = document.createElement('div');
+        goTopBtn.id = 'goTopBtn';
+        goTopBtn.title = 'Go to Top';
+        goTopBtn.setAttribute('aria-label', 'Go to Top');
+        goTopBtn.innerHTML = '<span>↑</span>';
+        goTopBtn.style.position = 'fixed';
+        goTopBtn.style.right = '32px';
+        goTopBtn.style.bottom = '150px';
+        goTopBtn.style.width = '50px';
+        goTopBtn.style.height = '50px';
+        goTopBtn.style.border = 'none';
+        goTopBtn.style.borderRadius = '12px';
+        goTopBtn.style.background = 'rgba(0,0,0,0.7)';
+        goTopBtn.style.backdropFilter = 'blur(10px)';
+        
+        // PDF Export functionality
+        document.getElementById('headerExportPdfBtn').addEventListener('click', function() {
+            if (!currentData) {
+                alert('Please analyze data first before exporting to PDF');
+                return;
+            }
+            
+            // Show loading indicator during PDF generation
+            document.getElementById('loadingIndicator2').style.display = 'block';
+            
+            // Create a temporary container for the PDF content
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.background = '#fff';
+            pdfContainer.style.color = '#000';
+            pdfContainer.style.padding = '20px';
+            pdfContainer.style.fontFamily = "'Poppins', 'Montserrat', sans-serif";
+            pdfContainer.style.width = '100%';
+            pdfContainer.style.maxWidth = '1100px';
+            
+            // Add title and query info
+            const titleElement = document.createElement('h1');
+            titleElement.textContent = 'Pain Dashboard Analysis';
+            titleElement.style.color = '#00657b';
+            titleElement.style.marginBottom = '10px';
+            titleElement.style.textAlign = 'center';
+            
+            const queryElement = document.createElement('h3');
+            queryElement.textContent = document.getElementById('queryTitle').textContent;
+            queryElement.style.color = '#333';
+            queryElement.style.marginBottom = '30px';
+            queryElement.style.textAlign = 'center';
+            
+            pdfContainer.appendChild(titleElement);
+            pdfContainer.appendChild(queryElement);
+            
+            // Generate content for all tabs
+            const tabNames = ['summary', 'pain', 'opportunities', 'mvp', 'sources'];
+            
+            // Process each tab
+            tabNames.forEach(tabName => {
+                // Create section header
+                const sectionHeader = document.createElement('h2');
+                sectionHeader.textContent = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+                sectionHeader.style.color = '#00657b';
+                sectionHeader.style.marginTop = '30px';
+                sectionHeader.style.marginBottom = '15px';
+                sectionHeader.style.borderBottom = '2px solid #00657b';
+                sectionHeader.style.paddingBottom = '5px';
+                
+                pdfContainer.appendChild(sectionHeader);
+                
+                // Generate content based on tab type
+                if (tabName === 'summary') {
+                    // Context section
+                    if (currentData.context) {
+                        const contextDiv = document.createElement('div');
+                        contextDiv.style.marginBottom = '20px';
+                        
+                        const contextHeader = document.createElement('h3');
+                        contextHeader.textContent = 'Context';
+                        contextHeader.style.color = '#00657b';
+                        contextDiv.appendChild(contextHeader);
+                        
+                        const contextContent = document.createElement('p');
+                        contextContent.textContent = currentData.context;
+                        contextContent.style.marginBottom = '15px';
+                        contextDiv.appendChild(contextContent);
+                        
+                        pdfContainer.appendChild(contextDiv);
+                    }
+                    
+                    // Pain Points Chart - Create a static representation
+                    if (currentData.pain_points && currentData.pain_points.length > 0) {
+                        const painChartDiv = document.createElement('div');
+                        painChartDiv.style.marginBottom = '30px';
+                        
+                        const painChartHeader = document.createElement('h3');
+                        painChartHeader.textContent = 'Pain Point Severity';
+                        painChartHeader.style.color = '#00657b';
+                        painChartDiv.appendChild(painChartHeader);
+                        
+                        // Create a table representation of pain points
+                        const painTable = document.createElement('table');
+                        painTable.style.width = '100%';
+                        painTable.style.borderCollapse = 'collapse';
+                        painTable.style.marginTop = '15px';
+                        
+                        // Table header
+                        const tableHeader = document.createElement('tr');
+                        
+                        const nameHeader = document.createElement('th');
+                        nameHeader.textContent = 'Pain Point';
+                        nameHeader.style.padding = '8px';
+                        nameHeader.style.textAlign = 'left';
+                        nameHeader.style.borderBottom = '1px solid #ddd';
+                        tableHeader.appendChild(nameHeader);
+                        
+                        const severityHeader = document.createElement('th');
+                        severityHeader.textContent = 'Severity';
+                        severityHeader.style.padding = '8px';
+                        severityHeader.style.textAlign = 'center';
+                        severityHeader.style.borderBottom = '1px solid #ddd';
+                        tableHeader.appendChild(severityHeader);
+                        
+                        painTable.appendChild(tableHeader);
+                        
+                        // Table rows
+                        currentData.pain_points.forEach(pain => {
+                            const row = document.createElement('tr');
+                            
+                            const nameCell = document.createElement('td');
+                            nameCell.textContent = pain.title || 'Unnamed Pain Point';
+                            nameCell.style.padding = '8px';
+                            nameCell.style.borderBottom = '1px solid #ddd';
+                            row.appendChild(nameCell);
+                            
+                            const severityCell = document.createElement('td');
+                            severityCell.textContent = pain.severity || 'N/A';
+                            severityCell.style.padding = '8px';
+                            severityCell.style.textAlign = 'center';
+                            severityCell.style.borderBottom = '1px solid #ddd';
+                            row.appendChild(severityCell);
+                            
+                            painTable.appendChild(row);
+                        });
+                        
+                        painChartDiv.appendChild(painTable);
+                        pdfContainer.appendChild(painChartDiv);
+                    }
+                    
+                    // Top Pain Points
+                    if (currentData.pain_points && currentData.pain_points.length > 0) {
+                        const topPainDiv = document.createElement('div');
+                        topPainDiv.style.marginBottom = '30px';
+                        
+                        const topPainHeader = document.createElement('h3');
+                        topPainHeader.textContent = 'Top Pain Points';
+                        topPainHeader.style.color = '#00657b';
+                        topPainDiv.appendChild(topPainHeader);
+                        
+                        currentData.pain_points.slice(0, 3).forEach((pain, index) => {
+                            const painItem = document.createElement('div');
+                            painItem.style.marginBottom = '15px';
+                            painItem.style.padding = '10px';
+                            painItem.style.border = '1px solid #ddd';
+                            painItem.style.borderRadius = '5px';
+                            
+                            const painTitle = document.createElement('h4');
+                            painTitle.textContent = `${index + 1}. ${pain.title || 'Unnamed Pain Point'}`;
+                            painTitle.style.marginBottom = '5px';
+                            painTitle.style.color = '#d32f2f';
+                            painItem.appendChild(painTitle);
+                            
+                            const painDesc = document.createElement('p');
+                            painDesc.textContent = pain.description || 'No description available';
+                            painItem.appendChild(painDesc);
+                            
+                            topPainDiv.appendChild(painItem);
+                        });
+                        
+                        pdfContainer.appendChild(topPainDiv);
+                    }
+                    
+                    // Top Opportunities
+                    if (currentData.opportunities && currentData.opportunities.length > 0) {
+                        const topOppDiv = document.createElement('div');
+                        topOppDiv.style.marginBottom = '30px';
+                        
+                        const topOppHeader = document.createElement('h3');
+                        topOppHeader.textContent = 'Top Opportunities';
+                        topOppHeader.style.color = '#00657b';
+                        topOppDiv.appendChild(topOppHeader);
+                        
+                        currentData.opportunities.slice(0, 3).forEach((opp, index) => {
+                            const oppItem = document.createElement('div');
+                            oppItem.style.marginBottom = '15px';
+                            oppItem.style.padding = '10px';
+                            oppItem.style.border = '1px solid #ddd';
+                            oppItem.style.borderRadius = '5px';
+                            
+                            const oppTitle = document.createElement('h4');
+                            oppTitle.textContent = `${index + 1}. ${opp.title || 'Unnamed Opportunity'}`;
+                            oppTitle.style.marginBottom = '5px';
+                            oppTitle.style.color = '#2e7d32';
+                            oppItem.appendChild(oppTitle);
+                            
+                            const oppDesc = document.createElement('p');
+                            oppDesc.textContent = opp.description || 'No description available';
+                            oppItem.appendChild(oppDesc);
+                            
+                            topOppDiv.appendChild(oppItem);
+                        });
+                        
+                        pdfContainer.appendChild(topOppDiv);
+                    }
+                } 
+                else if (tabName === 'pain') {
+                    // Detailed Pain Points
+                    if (currentData.pain_points && currentData.pain_points.length > 0) {
+                        currentData.pain_points.forEach((pain, index) => {
+                            const painItem = document.createElement('div');
+                            painItem.style.marginBottom = '20px';
+                            painItem.style.padding = '15px';
+                            painItem.style.border = '1px solid #ddd';
+                            painItem.style.borderRadius = '5px';
+                            
+                            const painTitle = document.createElement('h4');
+                            painTitle.textContent = `${index + 1}. ${pain.title || 'Unnamed Pain Point'}`;
+                            painTitle.style.marginBottom = '10px';
+                            painTitle.style.color = '#d32f2f';
+                            painItem.appendChild(painTitle);
+                            
+                            const severityDiv = document.createElement('div');
+                            severityDiv.style.marginBottom = '10px';
+                            severityDiv.innerHTML = `<strong>Severity:</strong> ${pain.severity || 'N/A'}`;
+                            painItem.appendChild(severityDiv);
+                            
+                            const painDesc = document.createElement('p');
+                            painDesc.textContent = pain.description || 'No description available';
+                            painDesc.style.marginBottom = '10px';
+                            painItem.appendChild(painDesc);
+                            
+                            if (pain.affected_users) {
+                                const usersDiv = document.createElement('div');
+                                usersDiv.style.marginBottom = '10px';
+                                usersDiv.innerHTML = `<strong>Affected Users:</strong> ${pain.affected_users}`;
+                                painItem.appendChild(usersDiv);
+                            }
+                            
+                            pdfContainer.appendChild(painItem);
+                        });
+                    }
+                    
+                    // Technical & Regulatory Considerations
+                    if (currentData.considerations) {
+                        const considerationsDiv = document.createElement('div');
+                        considerationsDiv.style.marginTop = '30px';
+                        
+                        const considerationsHeader = document.createElement('h3');
+                        considerationsHeader.textContent = 'Technical & Regulatory Considerations';
+                        considerationsHeader.style.color = '#00657b';
+                        considerationsDiv.appendChild(considerationsHeader);
+                        
+                        const considerationsContent = document.createElement('p');
+                        considerationsContent.textContent = currentData.considerations;
+                        considerationsDiv.appendChild(considerationsContent);
+                        
+                        pdfContainer.appendChild(considerationsDiv);
+                    }
+                }
+                else if (tabName === 'opportunities') {
+                    // Detailed Opportunities
+                    if (currentData.opportunities && currentData.opportunities.length > 0) {
+                        currentData.opportunities.forEach((opp, index) => {
+                            const oppItem = document.createElement('div');
+                            oppItem.style.marginBottom = '20px';
+                            oppItem.style.padding = '15px';
+                            oppItem.style.border = '1px solid #ddd';
+                            oppItem.style.borderRadius = '5px';
+                            
+                            const oppTitle = document.createElement('h4');
+                            oppTitle.textContent = `${index + 1}. ${opp.title || 'Unnamed Opportunity'}`;
+                            oppTitle.style.marginBottom = '10px';
+                            oppTitle.style.color = '#2e7d32';
+                            oppItem.appendChild(oppTitle);
+                            
+                            const oppDesc = document.createElement('p');
+                            oppDesc.textContent = opp.description || 'No description available';
+                            oppDesc.style.marginBottom = '10px';
+                            oppItem.appendChild(oppDesc);
+                            
+                            if (opp.target_users) {
+                                const usersDiv = document.createElement('div');
+                                usersDiv.style.marginBottom = '10px';
+                                usersDiv.innerHTML = `<strong>Target Users:</strong> ${opp.target_users}`;
+                                oppItem.appendChild(usersDiv);
+                            }
+                            
+                            pdfContainer.appendChild(oppItem);
+                        });
+                    }
+                    
+                    // Success Metrics
+                    if (currentData.metrics) {
+                        const metricsDiv = document.createElement('div');
+                        metricsDiv.style.marginTop = '30px';
+                        
+                        const metricsHeader = document.createElement('h3');
+                        metricsHeader.textContent = 'Success Metrics';
+                        metricsHeader.style.color = '#00657b';
+                        metricsDiv.appendChild(metricsHeader);
+                        
+                        if (Array.isArray(currentData.metrics)) {
+                            currentData.metrics.forEach((metric, index) => {
+                                const metricItem = document.createElement('div');
+                                metricItem.style.marginBottom = '10px';
+                                metricItem.style.padding = '10px';
+                                metricItem.style.backgroundColor = '#f5f5f5';
+                                metricItem.style.borderRadius = '5px';
+                                
+                                if (typeof metric === 'string') {
+                                    metricItem.textContent = metric;
+                                } else if (metric.name) {
+                                    metricItem.innerHTML = `<strong>${metric.name}:</strong> ${metric.description || ''}`;
+                                }
+                                
+                                metricsDiv.appendChild(metricItem);
+                            });
+                        } else if (typeof currentData.metrics === 'string') {
+                            const metricsContent = document.createElement('p');
+                            metricsContent.textContent = currentData.metrics;
+                            metricsDiv.appendChild(metricsContent);
+                        }
+                        
+                        pdfContainer.appendChild(metricsDiv);
+                    }
+                }
+                else if (tabName === 'mvp') {
+                    // MVP Generator
+                    const mvpDiv = document.createElement('div');
+                    
+                    const mvpHeader = document.createElement('h3');
+                    mvpHeader.textContent = 'MVP Recommendation';
+                    mvpHeader.style.color = '#00657b';
+                    mvpDiv.appendChild(mvpHeader);
+                    
+                    if (currentData.mvp_recommendation) {
+                        const mvpContent = document.createElement('div');
+                        mvpContent.style.marginTop = '15px';
+                        mvpContent.style.padding = '15px';
+                        mvpContent.style.border = '1px solid #ddd';
+                        mvpContent.style.borderRadius = '5px';
+                        mvpContent.textContent = currentData.mvp_recommendation;
+                        mvpDiv.appendChild(mvpContent);
+                    } else {
+                        const noMvpContent = document.createElement('p');
+                        noMvpContent.textContent = 'No MVP recommendation available.';
+                        mvpDiv.appendChild(noMvpContent);
+                    }
+                    
+                    pdfContainer.appendChild(mvpDiv);
+                }
+                else if (tabName === 'sources') {
+                    // Sources
+                    if (currentData.sources) {
+                        const sourcesDiv = document.createElement('div');
+                        
+                        // StackOverflow
+                        if (currentData.sources.stackoverflow && currentData.sources.stackoverflow.length > 0) {
+                            const soHeader = document.createElement('h3');
+                            soHeader.textContent = 'StackOverflow Questions';
+                            soHeader.style.color = '#00657b';
+                            soHeader.style.marginBottom = '15px';
+                            sourcesDiv.appendChild(soHeader);
+                            
+                            currentData.sources.stackoverflow.forEach((item, index) => {
+                                const sourceItem = document.createElement('div');
+                                sourceItem.style.marginBottom = '15px';
+                                sourceItem.style.padding = '10px';
+                                sourceItem.style.border = '1px solid #ddd';
+                                sourceItem.style.borderRadius = '5px';
+                                
+                                const sourceTitle = document.createElement('h4');
+                                sourceTitle.textContent = item.title || `Question ${index + 1}`;
+                                sourceTitle.style.marginBottom = '5px';
+                                sourceItem.appendChild(sourceTitle);
+                                
+                                if (item.url) {
+                                    const sourceUrl = document.createElement('p');
+                                    sourceUrl.textContent = `URL: ${item.url}`;
+                                    sourceUrl.style.fontSize = '0.9em';
+                                    sourceUrl.style.color = '#666';
+                                    sourceItem.appendChild(sourceUrl);
+                                }
+                                
+                                sourcesDiv.appendChild(sourceItem);
+                            });
+                        }
+                        
+                        // Reddit
+                        if (currentData.sources.reddit && currentData.sources.reddit.length > 0) {
+                            const redditHeader = document.createElement('h3');
+                            redditHeader.textContent = 'Reddit Discussions';
+                            redditHeader.style.color = '#00657b';
+                            redditHeader.style.marginTop = '20px';
+                            redditHeader.style.marginBottom = '15px';
+                            sourcesDiv.appendChild(redditHeader);
+                            
+                            currentData.sources.reddit.forEach((item, index) => {
+                                const sourceItem = document.createElement('div');
+                                sourceItem.style.marginBottom = '15px';
+                                sourceItem.style.padding = '10px';
+                                sourceItem.style.border = '1px solid #ddd';
+                                sourceItem.style.borderRadius = '5px';
+                                
+                                const sourceTitle = document.createElement('h4');
+                                sourceTitle.textContent = item.title || `Post ${index + 1}`;
+                                sourceTitle.style.marginBottom = '5px';
+                                sourceItem.appendChild(sourceTitle);
+                                
+                                if (item.url) {
+                                    const sourceUrl = document.createElement('p');
+                                    sourceUrl.textContent = `URL: ${item.url}`;
+                                    sourceUrl.style.fontSize = '0.9em';
+                                    sourceUrl.style.color = '#666';
+                                    sourceItem.appendChild(sourceUrl);
+                                }
+                                
+                                sourcesDiv.appendChild(sourceItem);
+                            });
+                        }
+                        
+                        pdfContainer.appendChild(sourcesDiv);
+                    }
+                    
+                    // Complaints Analysis
+                    if (currentData.complaints_analysis) {
+                        const complaintsDiv = document.createElement('div');
+                        complaintsDiv.style.marginTop = '30px';
+                        
+                        const complaintsHeader = document.createElement('h3');
+                        complaintsHeader.textContent = 'Complaints Analysis';
+                        complaintsHeader.style.color = '#00657b';
+                        complaintsDiv.appendChild(complaintsHeader);
+                        
+                        const complaintsContent = document.createElement('p');
+                        complaintsContent.textContent = currentData.complaints_analysis.replace(/\\n/g, '\n');
+                        complaintsDiv.appendChild(complaintsContent);
+                        
+                        pdfContainer.appendChild(complaintsDiv);
+                    }
+                }
+            });
+            
+            // Add to document for rendering
+            document.body.appendChild(pdfContainer);
+            pdfContainer.style.position = 'absolute';
+            pdfContainer.style.left = '-9999px';
+            
+            // Configure PDF options
+            const opt = {
+                margin: [15, 15],
+                filename: 'pain-analysis-complete.pdf',
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generate PDF
+            html2pdf().from(pdfContainer).set(opt).save()
+                .then(() => {
+                    // Hide loading indicator and remove temporary element
+                    document.getElementById('loadingIndicator2').style.display = 'none';
+                    document.body.removeChild(pdfContainer);
+                })
+                .catch(err => {
+                    console.error('PDF generation error:', err);
+                    document.getElementById('loadingIndicator2').style.display = 'none';
+                    document.body.removeChild(pdfContainer);
+                    alert('Error generating PDF: ' + err.message);
+                });
+        });
+        
+        // Share URL functionality
+        document.getElementById('headerShareUrlBtn').addEventListener('click', function() {
+            if (!currentData) {
+                alert('Please analyze data first before sharing');
+                return;
+            }
+            
+            const vertical = document.getElementById('verticalSelect').value;
+            const query = document.getElementById('queryInput').value;
+            
+            if (!vertical || !query) {
+                alert('Missing vertical or query information');
+                return;
+            }
+            
+            // Create shareable URL
+            const shareUrl = `${window.location.origin}/pain-dashboard?vertical=${encodeURIComponent(vertical)}&query=${encodeURIComponent(query)}`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareUrl)
+                .then(() => {
+                    alert('Shareable link copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Could not copy text: ', err);
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareUrl;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('Shareable link copied to clipboard!');
+                });
+        });
+        goTopBtn.style.border = '1.5px solid rgba(0,255,247,0.3)';
+        goTopBtn.style.boxShadow = '0 4px 20px rgba(0,255,247,0.25)';
+        goTopBtn.style.cursor = 'pointer';
+        goTopBtn.style.zIndex = '1200';
+        goTopBtn.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        goTopBtn.style.display = 'none';
+        goTopBtn.style.color = '#00fff7';
+        goTopBtn.style.fontSize = '24px';
+        goTopBtn.style.fontWeight = 'bold';
+        goTopBtn.style.fontFamily = "'Poppins', sans-serif";
+        
+        const goBottomBtn = document.createElement('div');
+        goBottomBtn.id = 'goBottomBtn';
+        goBottomBtn.title = 'Go to Bottom';
+        goBottomBtn.setAttribute('aria-label', 'Go to Bottom');
+        goBottomBtn.innerHTML = '<span>↓</span>';
+        goBottomBtn.style.position = 'fixed';
+        goBottomBtn.style.right = '32px';
+        goBottomBtn.style.bottom = '90px';
+        goBottomBtn.style.width = '50px';
+        goBottomBtn.style.height = '50px';
+        goBottomBtn.style.border = 'none';
+        goBottomBtn.style.borderRadius = '12px';
+        goBottomBtn.style.background = 'rgba(0,0,0,0.7)';
+        goBottomBtn.style.backdropFilter = 'blur(10px)';
+        goBottomBtn.style.border = '1.5px solid rgba(0,255,247,0.3)';
+        goBottomBtn.style.boxShadow = '0 4px 20px rgba(0,255,247,0.25)';
+        goBottomBtn.style.cursor = 'pointer';
+        goBottomBtn.style.zIndex = '1200';
+        goBottomBtn.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        goBottomBtn.style.display = 'none';
+        goBottomBtn.style.color = '#00fff7';
+        goBottomBtn.style.fontSize = '24px';
+        goBottomBtn.style.fontWeight = 'bold';
+        goBottomBtn.style.fontFamily = "'Poppins', sans-serif";
+        
+        document.body.appendChild(goTopBtn);
+        document.body.appendChild(goBottomBtn);
+        
+        goTopBtn.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        goBottomBtn.addEventListener('click', () => {
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        });
+        
+        function updateScrollBtns() {
+          const scrollY = window.scrollY || window.pageYOffset;
+          const winH = window.innerHeight;
+          const docH = document.documentElement.scrollHeight;
+          goTopBtn.style.display = scrollY > 100 ? 'flex' : 'none';
+          goBottomBtn.style.display = (scrollY + winH < docH - 100) ? 'flex' : 'none';
+        }
+        
+        window.addEventListener('scroll', updateScrollBtns);
+        window.addEventListener('resize', updateScrollBtns);
+        
+        function renderContext(context) {
+            const container = document.getElementById('contextContainer');
+            container.innerHTML = `
+                <div style="margin-bottom: 20px; animation: fadeInUp 0.5s forwards;">
+                    <h6 class="detail-header" style="color: #00fff7; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="bi bi-info-circle-fill" style="margin-right: 10px;"></i>
+                        What This Means
+                    </h6>
+                    <p style="color: #e7faff; line-height: 1.6; padding: 10px; background: rgba(0,255,247,0.05); border-radius: 10px; border-left: 3px solid #00fff7;">${context.description}</p>
+                </div>
+                
+                <div style="margin-bottom: 20px; animation: fadeInUp 0.5s forwards; animation-delay: 0.1s;">
+                    <h6 class="detail-header" style="color: #00fff7; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="bi bi-graph-up" style="margin-right: 10px;"></i>
+                        Current State
+                    </h6>
+                    <p style="color: #e7faff; line-height: 1.6; padding: 10px; background: rgba(0,255,247,0.05); border-radius: 10px; border-left: 3px solid #5e9fd4;">${context.current_state}</p>
+                </div>
+                
+                <div style="margin-bottom: 20px; animation: fadeInUp 0.5s forwards; animation-delay: 0.2s;">
+                    <h6 class="detail-header" style="color: #00fff7; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="bi bi-clock-history" style="margin-right: 10px;"></i>
+                        Why It's Important Now
+                    </h6>
+                    <p style="color: #e7faff; line-height: 1.6; padding: 10px; background: rgba(0,255,247,0.05); border-radius: 10px; border-left: 3px solid #00d084;">${context.importance}</p>
+                </div>
+                
+                <div style="margin-bottom: 0; animation: fadeInUp 0.5s forwards; animation-delay: 0.3s;">
+                    <h6 class="detail-header" style="color: #00fff7; font-weight: 700; font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="bi bi-building" style="margin-right: 10px;"></i>
+                        Key Players
+                    </h6>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: rgba(0,255,247,0.05); border-radius: 10px; border-left: 3px solid #ff6b6b;">
+                        ${Array.isArray(context.key_players) ? 
+                          context.key_players.map(player => `<span class="user-segment" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${player}</span>`).join('') : 
+                          `<span class="user-segment" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">No key players data</span>`}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderPainChart(painPoints) {
+            const ctx = document.getElementById('painChart').getContext('2d');
+            
+            // Extract data
+            const labels = painPoints.map(p => p.title);
+            const data = painPoints.map(p => p.severity);
+            
+            // Generate gradient colors
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 255, 247, 0.8)');
+            gradient.addColorStop(1, 'rgba(94, 159, 212, 0.8)');
+            
+            // Create chart
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pain Severity (1-10)',
+                        data: data,
+                        backgroundColor: gradient,
+                        borderColor: 'rgba(0, 255, 247, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        barThickness: 30,
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e7faff',
+                                font: {
+                                    family: "'Poppins', sans-serif",
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#00fff7',
+                            bodyColor: '#ffffff',
+                            bodyFont: {
+                                family: "'Poppins', sans-serif"
+                            },
+                            titleFont: {
+                                family: "'Poppins', sans-serif",
+                                weight: 'bold'
+                            },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#e7faff',
+                                font: {
+                                    family: "'Poppins', sans-serif"
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#e7faff',
+                                font: {
+                                    family: "'Poppins', sans-serif"
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderTopPainPoints(painPoints) {
+            const container = document.getElementById('topPainPointsContainer');
+            container.innerHTML = '';
+            
+            // Sort by severity
+            const sortedPains = [...painPoints].sort((a, b) => b.severity - a.severity);
+            
+            sortedPains.forEach((pain, index) => {
+                const card = document.createElement('div');
+                card.className = 'card pain-card mb-3';
+                card.style.borderRadius = '12px';
+                card.style.overflow = 'hidden';
+                card.style.transition = 'transform 0.2s, box-shadow 0.2s';
+                card.style.cursor = 'pointer';
+                card.style.animation = `fadeInUp 0.5s forwards`;
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                // Add hover effect
+                card.onmouseover = () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 30px rgba(0,255,247,0.2)';
+                };
+                card.onmouseout = () => {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 10px 25px rgba(0,255,247,0.08)';
+                };
+                
+                const severityColor = getSeverityColor(pain.severity);
+                const gradientColors = {
+                    'danger': 'linear-gradient(135deg, #ff6b6b, #ff8e8e)',
+                    'warning': 'linear-gradient(135deg, #ffd54f, #ffca28)',
+                    'info': 'linear-gradient(135deg, #4fc3f7, #29b6f6)',
+                    'secondary': 'linear-gradient(135deg, #90a4ae, #78909c)'
+                };
+                
+                card.innerHTML = `
+                    <div class="card-body" style="padding: 20px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span class="severity-badge" style="background: ${gradientColors[severityColor]}; color: #001f2f; font-weight: bold; border-radius: 10px; padding: 5px 15px; margin-right: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">${pain.severity}/10</span>
+                            <h5 class="card-title mb-0" style="font-weight: 700; color: #00fff7;">${pain.title}</h5>
+                        </div>
+                        <p class="card-text" style="margin-bottom: 15px; line-height: 1.6;">${pain.description}</p>
+                        <div style="margin-top: 15px;">
+                            <strong style="color: #5e9fd4; display: block; margin-bottom: 8px;">User Segments:</strong> 
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                ${Array.isArray(pain.user_segments) ? 
+                                  pain.user_segments.map(segment => `<span class="user-segment" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${segment}</span>`).join('') : 
+                                  `<span class="user-segment" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${pain.user_segments}</span>`}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function renderTopOpportunities(opportunities) {
+            const container = document.getElementById('topOpportunitiesContainer');
+            container.innerHTML = '';
+            
+            opportunities.forEach((opp, index) => {
+                const card = document.createElement('div');
+                card.className = 'card opportunity-card mb-3';
+                card.style.borderRadius = '12px';
+                card.style.overflow = 'hidden';
+                card.style.transition = 'transform 0.2s, box-shadow 0.2s';
+                card.style.cursor = 'pointer';
+                card.style.animation = `fadeInUp 0.5s forwards`;
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                // Add hover effect
+                card.onmouseover = () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 10px 30px rgba(0,255,247,0.2)';
+                };
+                card.onmouseout = () => {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 10px 25px rgba(0,255,247,0.08)';
+                };
+                
+                card.innerHTML = `
+                    <div class="card-body" style="padding: 20px;">
+                        <h5 class="card-title" style="color: #00fff7; font-weight: 700; margin-bottom: 15px; font-size: 1.3rem;">
+                            <i class="bi bi-lightbulb-fill" style="margin-right: 10px; color: #5e9fd4;"></i>
+                            ${opp.product_concept}
+                        </h5>
+                        <p class="card-text" style="margin-bottom: 15px; line-height: 1.6; color: #e7faff;">${opp.value_proposition}</p>
+                        <div style="margin-top: 15px; border-top: 1px solid rgba(0,255,247,0.1); padding-top: 15px;">
+                            <strong style="color: #5e9fd4; display: block; margin-bottom: 8px;">
+                                <i class="bi bi-people-fill" style="margin-right: 5px;"></i>
+                                Target Users:
+                            </strong> 
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                ${Array.isArray(opp.target_users) ? 
+                                  opp.target_users.map(user => `<span class="user-segment" style="background: rgba(0,255,247,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${user}</span>`).join('') : 
+                                  `<span class="user-segment" style="background: rgba(0,255,247,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${opp.target_users}</span>`}
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; text-align: right;">
+                            <button class="btn btn-sm" style="background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; font-weight: 600; border: none; border-radius: 20px; padding: 5px 15px;">
+                                <i class="bi bi-rocket-fill" style="margin-right: 5px;"></i>
+                                Explore Solution
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function renderDetailedPain(painPoints) {
+            const container = document.getElementById('detailedPainContainer');
+            container.innerHTML = '';
+            
+            // Sort by severity
+            const sortedPains = [...painPoints].sort((a, b) => b.severity - a.severity);
+            
+            sortedPains.forEach((pain, index) => {
+                const section = document.createElement('div');
+                section.className = 'detail-section';
+                section.style.borderRadius = '16px';
+                section.style.marginBottom = '25px';
+                section.style.boxShadow = '0 10px 25px rgba(0,255,247,0.08)';
+                section.style.animation = `fadeInUp 0.5s forwards`;
+                section.style.animationDelay = `${index * 0.1}s`;
+                section.style.opacity = '0';
+                section.style.transform = 'translateY(20px)';
+                
+                const severityColor = getSeverityColor(pain.severity);
+                const gradientColors = {
+                    'danger': 'linear-gradient(135deg, #ff6b6b, #ff8e8e)',
+                    'warning': 'linear-gradient(135deg, #ffd54f, #ffca28)',
+                    'info': 'linear-gradient(135deg, #4fc3f7, #29b6f6)',
+                    'secondary': 'linear-gradient(135deg, #90a4ae, #78909c)'
+                };
+                
+                section.innerHTML = `
+                    <div style="padding: 20px; border-bottom: 1px solid rgba(0,255,247,0.1);">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span class="severity-badge" style="background: ${gradientColors[severityColor]}; color: #001f2f; font-weight: bold; border-radius: 10px; padding: 5px 15px; margin-right: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">${pain.severity}/10</span>
+                            <h4 style="margin: 0; color: #00fff7; font-weight: 700;">${pain.title}</h4>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h6 class="detail-header" style="color: #5e9fd4; font-weight: 600; display: flex; align-items: center;">
+                                <i class="bi bi-card-text" style="margin-right: 8px;"></i>
+                                Description
+                            </h6>
+                            <p style="color: #e7faff; line-height: 1.6; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">${pain.description}</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h6 class="detail-header" style="color: #5e9fd4; font-weight: 600; display: flex; align-items: center;">
+                                <i class="bi bi-question-circle" style="margin-right: 8px;"></i>
+                                Why It Remains Unsolved
+                            </h6>
+                            <p style="color: #e7faff; line-height: 1.6; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">${pain.reason_unsolved}</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h6 class="detail-header" style="color: #5e9fd4; font-weight: 600; display: flex; align-items: center;">
+                                <i class="bi bi-people" style="margin-right: 8px;"></i>
+                                Affected User Segments
+                            </h6>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                ${Array.isArray(pain.user_segments) ? 
+                                  pain.user_segments.map(segment => `<span class="user-segment" style="background: rgba(0,255,247,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${segment}</span>`).join('') : 
+                                  `<span class="user-segment" style="background: rgba(0,255,247,0.1); border: 1px solid rgba(0,255,247,0.3); color: #e7faff; padding: 5px 12px; border-radius: 20px;">${pain.user_segments}</span>`}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 15px 20px; background: rgba(0,0,0,0.2); border-radius: 0 0 16px 16px; display: flex; justify-content: flex-end; gap: 10px;">
+                        <button class="btn btn-sm save-to-collection-btn" data-pain-index="${index}" style="background: rgba(0,255,247,0.1); color: #00fff7; border: 1px solid rgba(0,255,247,0.3); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center;">
+                            <i class="bi bi-bookmark-plus" style="margin-right: 5px;"></i>
+                            Save to Collection
+                        </button>
+                        <button class="btn btn-sm" style="background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; font-weight: 600; border: none; border-radius: 20px; padding: 5px 15px; display: flex; align-items: center;">
+                            <i class="bi bi-lightning" style="margin-right: 5px;"></i>
+                            Generate Solution
+                        </button>
+                        <button class="btn btn-sm regenerate-solution-btn" data-pain-index="${index}" style="background: linear-gradient(90deg,#5e9fd4,#00fff7); color: #001f2f; font-weight: 600; border: none; border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; margin-left: 8px;">
+                            <i class="bi bi-arrow-repeat" style="margin-right: 5px;"></i>
+                            Regenerate
+                        </button>
+                    </div>
+                    <div class="solution-output" id="solution-output-${index}" style="margin-top: 15px; display: none; background: rgba(0,255,247,0.07); border: 1px solid rgba(0,255,247,0.17); border-radius: 10px; padding: 15px; color: #00fff7;"></div>
+                `;
+                
+                container.appendChild(section);
+            });
+    // Add event listeners for save to collection
+    container.querySelectorAll('.save-to-collection-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const painIndex = this.getAttribute('data-pain-index');
+            const pain = painPoints[painIndex];
+            // Use the save module from RadarGPT
+            if (window.saveToSavedCollection) {
+                const summaryHTML = `
+                    <h4>${pain.title}</h4>
+                    <p>${pain.description}</p>
+                    <p><b>Why Unsolved:</b> ${pain.reason_unsolved}</p>
+                    <p><b>User Segments:</b> ${Array.isArray(pain.user_segments) ? pain.user_segments.join(', ') : pain.user_segments}</p>
+                `;
+                window.saveToSavedCollection(
+                    pain.title || pain.description || 'Pain Point',
+                    summaryHTML,
+                    this
+                );
+            } else {
+                alert('Save module not loaded.');
+            }
+        });
+    });
+
+    // Add event listeners for Generate Solution and Regenerate buttons
+    container.querySelectorAll('.btn').forEach(btn => {
+        if (btn.textContent.includes('Generate Solution')) {
+            btn.addEventListener('click', async function() {
+                const parent = btn.closest('.detail-section');
+                const solutionDiv = parent.querySelector('.solution-output');
+                const painIndex = Array.from(container.children).indexOf(parent);
+                const pain = painPoints[painIndex];
+                solutionDiv.style.display = 'block';
+                solutionDiv.innerHTML = '<span style="color:#5e9fd4;">Generating solution...</span>';
+                try {
+                    const response = await fetch('/generate-solution', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pain_point: {
+                                title: pain.title,
+                                description: pain.description,
+                                reason_unsolved: pain.reason_unsolved,
+                                user_segments: pain.user_segments,
+                                severity: pain.severity
+                            }
+                        })
+                    });
+                    const data = await response.json();
+                    if (data && (data.solution_html || data.solution)) {
+                        solutionDiv.innerHTML = data.solution_html || data.solution;
+                    } else {
+                        solutionDiv.innerHTML = '<span style="color:#ff6b6b;">No solution returned.</span>';
+                    }
+                } catch (err) {
+                    solutionDiv.innerHTML = '<span style="color:#ff6b6b;">Error generating solution.</span>';
+                }
+            });
+        }
+        if (btn.classList.contains('regenerate-solution-btn')) {
+            btn.addEventListener('click', async function() {
+                const parent = btn.closest('.detail-section');
+                const solutionDiv = parent.querySelector('.solution-output');
+                const painIndex = btn.getAttribute('data-pain-index');
+                const pain = painPoints[painIndex];
+                solutionDiv.style.display = 'block';
+                solutionDiv.innerHTML = '<span style="color:#5e9fd4;">Regenerating solution...</span>';
+                try {
+                    const response = await fetch('/generate-solution', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pain_point: {
+                                title: pain.title,
+                                description: pain.description,
+                                reason_unsolved: pain.reason_unsolved,
+                                user_segments: pain.user_segments,
+                                severity: pain.severity
+                            }
+                        })
+                    });
+                    const data = await response.json();
+                    if (data && (data.solution_html || data.solution)) {
+                        solutionDiv.innerHTML = data.solution_html || data.solution;
+                    } else {
+                        solutionDiv.innerHTML = '<span style="color:#ff6b6b;">No solution returned.</span>';
+                    }
+                } catch (err) {
+                    solutionDiv.innerHTML = '<span style="color:#ff6b6b;">Error generating solution.</span>';
+                }
+            });
+        }
+    });
+        }
+        
+        function renderConsiderations(considerations) {
+            const container = document.getElementById('considerationsContainer');
+            container.innerHTML = '';
+            
+            const section = document.createElement('div');
+            section.className = 'row';
+            
+            section.innerHTML = `
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Regulatory Considerations</h6>
+                    <ul class="list-group">
+                        ${Array.isArray(considerations.regulations) ? 
+                          considerations.regulations.map(reg => `<li class="list-group-item">${reg}</li>`).join('') : 
+                          '<li class="list-group-item">No regulatory data available</li>'}
+                    </ul>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Technical Challenges</h6>
+                    <ul class="list-group">
+                        ${Array.isArray(considerations.technical_challenges) ? 
+                          considerations.technical_challenges.map(tech => `<li class="list-group-item">${tech}</li>`).join('') : 
+                          '<li class="list-group-item">No technical challenges data available</li>'}
+                    </ul>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Integration Points</h6>
+                    <ul class="list-group">
+                        ${Array.isArray(considerations.integration_points) ? 
+                          considerations.integration_points.map(point => `<li class="list-group-item">${point}</li>`).join('') : 
+                          '<li class="list-group-item">No integration points data available</li>'}
+                    </ul>
+                </div>
+            `;
+            
+            container.appendChild(section);
+        }
+        
+        function renderDetailedOpportunities(opportunities) {
+            const container = document.getElementById('detailedOpportunitiesContainer');
+            container.innerHTML = '';
+            
+            opportunities.forEach((opp, index) => {
+                const section = document.createElement('div');
+                section.className = 'detail-section';
+                
+                section.innerHTML = `
+                    <h4 class="mb-3">Opportunity ${index + 1}: ${opp.product_concept}</h4>
+                    
+                    <div class="mb-3">
+                        <h6 class="detail-header">Value Proposition</h6>
+                        <p>${opp.value_proposition}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="detail-header">Target Users</h6>
+                        <div>
+                            ${Array.isArray(opp.target_users) ? 
+                              opp.target_users.map(user => `<span class="user-segment">${user}</span>`).join('') : 
+                              `<span class="user-segment">${opp.target_users}</span>`}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="detail-header">Go-to-Market Strategy</h6>
+                        <p>${opp.go_to_market}</p>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button class="btn btn-sm btn-outline-primary">Save to Collection</button>
+                        <button class="btn btn-sm btn-outline-success">Generate MVP</button>
+                    </div>
+                `;
+                
+                container.appendChild(section);
+            });
+        }
+        
+        function renderMetrics(metrics) {
+            const container = document.getElementById('metricsContainer');
+            container.innerHTML = '';
+            
+            const section = document.createElement('div');
+            section.className = 'row';
+            
+            section.innerHTML = `
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Key Performance Indicators</h6>
+                    <div>
+                        ${Array.isArray(metrics.kpis) ? 
+                          metrics.kpis.map(kpi => `<div class="metric-item">${kpi}</div>`).join('') : 
+                          '<div class="metric-item">No KPI data available</div>'}
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Adoption Metrics</h6>
+                    <div>
+                        ${Array.isArray(metrics.adoption_metrics) ? 
+                          metrics.adoption_metrics.map(metric => `<div class="metric-item">${metric}</div>`).join('') : 
+                          '<div class="metric-item">No adoption metrics data available</div>'}
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                    <h6 class="detail-header">Business Metrics</h6>
+                    <div>
+                        ${Array.isArray(metrics.business_metrics) ? 
+                          metrics.business_metrics.map(metric => `<div class="metric-item">${metric}</div>`).join('') : 
+                          '<div class="metric-item">No business metrics data available</div>'}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(section);
+        }
+        
+        // Function to export dashboard content as PDF
+        function exportToPdf() {
+            // Show loading indicator
+            const loadingEl = document.createElement('div');
+            loadingEl.id = 'pdfLoadingIndicator';
+            loadingEl.style.position = 'fixed';
+            loadingEl.style.top = '0';
+            loadingEl.style.left = '0';
+            loadingEl.style.width = '100%';
+            loadingEl.style.height = '100%';
+            loadingEl.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            loadingEl.style.zIndex = '9999';
+            loadingEl.style.display = 'flex';
+            loadingEl.style.justifyContent = 'center';
+            loadingEl.style.alignItems = 'center';
+            loadingEl.style.flexDirection = 'column';
+            
+            const spinner = document.createElement('div');
+            spinner.className = 'loading-spinner';
+            
+            const text = document.createElement('p');
+            text.textContent = 'Generating PDF...';
+            text.style.color = '#00fff7';
+            text.style.marginTop = '20px';
+            text.style.fontSize = '1.2rem';
+            
+            loadingEl.appendChild(spinner);
+            loadingEl.appendChild(text);
+            document.body.appendChild(loadingEl);
+            
+            // Create a comprehensive export with all tabs
+            const exportContainer = document.createElement('div');
+            exportContainer.style.backgroundColor = '#fff';
+            exportContainer.style.color = '#000';
+            exportContainer.style.padding = '20px';
+            exportContainer.style.width = '100%';
+            
+            // Add a title
+            const title = document.createElement('h1');
+            title.textContent = 'Pain Dashboard Analysis: ' + document.getElementById('queryTitle').textContent;
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '20px';
+            title.style.color = '#000';
+            exportContainer.appendChild(title);
+            
+            // Add timestamp
+            const timestamp = document.createElement('p');
+            timestamp.textContent = 'Generated on: ' + new Date().toLocaleString();
+            timestamp.style.textAlign = 'center';
+            timestamp.style.marginBottom = '30px';
+            timestamp.style.color = '#666';
+            exportContainer.appendChild(timestamp);
+            
+            // Add all tab contents
+            if (currentData) {
+                // Summary section
+                const summarySection = document.createElement('div');
+                summarySection.innerHTML = `<h2 style="color: #000; margin-top: 30px; page-break-before: always;">Summary</h2>`;
+                summarySection.innerHTML += contentTemplates.summary(currentData);
+                exportContainer.appendChild(summarySection);
+                
+                // Pain Points section
+                const painSection = document.createElement('div');
+                painSection.innerHTML = `<h2 style="color: #000; margin-top: 30px; page-break-before: always;">Pain Points</h2>`;
+                painSection.innerHTML += contentTemplates.pain(currentData);
+                exportContainer.appendChild(painSection);
+                
+                // Opportunities section
+                const oppSection = document.createElement('div');
+                oppSection.innerHTML = `<h2 style="color: #000; margin-top: 30px; page-break-before: always;">Opportunities</h2>`;
+                oppSection.innerHTML += contentTemplates.opportunities(currentData);
+                exportContainer.appendChild(oppSection);
+                
+                // MVP section
+                const mvpSection = document.createElement('div');
+                mvpSection.innerHTML = `<h2 style="color: #000; margin-top: 30px; page-break-before: always;">MVP Generator</h2>`;
+                mvpSection.innerHTML += contentTemplates.mvp(currentData);
+                exportContainer.appendChild(mvpSection);
+                
+                // Sources section if available
+                if (currentData.sources) {
+                    const sourcesSection = document.createElement('div');
+                    sourcesSection.innerHTML = `<h2 style="color: #000; margin-top: 30px; page-break-before: always;">Sources</h2>`;
+                    sourcesSection.innerHTML += contentTemplates.sources(currentData);
+                    exportContainer.appendChild(sourcesSection);
+                }
+            }
+            
+            // Fix styling for PDF
+            const styles = `
+                .card { border: 1px solid #ddd; margin-bottom: 20px; page-break-inside: avoid; background-color: #fff; color: #000; }
+                .card-header { background-color: #f5f5f5 !important; padding: 10px; border-bottom: 1px solid #ddd; color: #000 !important; }
+                .card-body { padding: 15px; background-color: #fff !important; color: #000 !important; }
+                .detail-section { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; background-color: #fff; color: #000; }
+                canvas { max-width: 100%; height: auto; }
+                pre { white-space: pre-wrap; }
+                h1, h2, h3, h4, h5, h6, p, span, div { color: #000 !important; }
+                .user-segment { background-color: #f5f5f5 !important; color: #000 !important; border: 1px solid #ddd !important; }
+                .btn { display: none !important; }
+                i.bi { color: #000 !important; }
+            `;
+            
+            const styleEl = document.createElement('style');
+            styleEl.textContent = styles;
+            exportContainer.prepend(styleEl);
+            
+            // Create temporary div to hold the export container
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.appendChild(exportContainer);
+            document.body.appendChild(tempDiv);
+            
+            // Configure PDF options
+            const opt = {
+                margin: [10, 10],
+                filename: 'pain-dashboard-analysis.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Generate PDF
+            setTimeout(() => {
+                html2pdf().from(exportContainer).set(opt).save()
+                    .then(() => {
+                        // Remove temporary elements
+                        document.body.removeChild(tempDiv);
+                        document.body.removeChild(loadingEl);
+                    })
+                    .catch(err => {
+                        console.error('Error generating PDF:', err);
+                        document.body.removeChild(tempDiv);
+                        document.body.removeChild(loadingEl);
+                        alert('Error generating PDF. Please try again.');
+                    });
+            }, 500);
+        }
+        
+        // Function to generate and share a unique URL
+        function shareAsLink() {
+            // Create a modal for the share link
+            const modalEl = document.createElement('div');
+            modalEl.style.position = 'fixed';
+            modalEl.style.top = '0';
+            modalEl.style.left = '0';
+            modalEl.style.width = '100%';
+            modalEl.style.height = '100%';
+            modalEl.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            modalEl.style.zIndex = '9999';
+            modalEl.style.display = 'flex';
+            modalEl.style.justifyContent = 'center';
+            modalEl.style.alignItems = 'center';
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.style.backgroundColor = '#0b1c26';
+            modalContent.style.borderRadius = '16px';
+            modalContent.style.padding = '30px';
+            modalContent.style.width = '90%';
+            modalContent.style.maxWidth = '600px';
+            modalContent.style.boxShadow = '0 10px 30px rgba(0,255,247,0.3)';
+            modalContent.style.border = '1.5px solid rgba(0,255,247,0.3)';
+            
+            // Create modal header
+            const modalHeader = document.createElement('div');
+            modalHeader.style.display = 'flex';
+            modalHeader.style.justifyContent = 'space-between';
+            modalHeader.style.alignItems = 'center';
+            modalHeader.style.marginBottom = '20px';
+            
+            const modalTitle = document.createElement('h4');
+            modalTitle.textContent = 'Share Analysis';
+            modalTitle.style.color = '#00fff7';
+            modalTitle.style.margin = '0';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.backgroundColor = 'transparent';
+            closeBtn.style.border = 'none';
+            closeBtn.style.color = '#fff';
+            closeBtn.style.fontSize = '24px';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = () => document.body.removeChild(modalEl);
+            
+            modalHeader.appendChild(modalTitle);
+            modalHeader.appendChild(closeBtn);
+            
+            // Create share link input
+            const linkContainer = document.createElement('div');
+            linkContainer.style.marginBottom = '20px';
+            
+            const linkLabel = document.createElement('p');
+            linkLabel.textContent = 'Share this link to give others access to this analysis:';
+            linkLabel.style.color = '#fff';
+            linkLabel.style.marginBottom = '10px';
+            
+            // Generate a shareable link with current query parameters
+            const vertical = document.getElementById('verticalSelect').value;
+            const query = document.getElementById('queryInput').value;
+            const shareUrl = `${window.location.origin}/pain-dashboard?vertical=${encodeURIComponent(vertical)}&query=${encodeURIComponent(query)}`;
+            
+            const linkInput = document.createElement('div');
+            linkInput.style.display = 'flex';
+            linkInput.style.alignItems = 'center';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = shareUrl;
+            input.readOnly = true;
+            input.style.flex = '1';
+            input.style.padding = '12px';
+            input.style.borderRadius = '10px 0 0 10px';
+            input.style.border = '1.5px solid rgba(0,255,247,0.3)';
+            input.style.backgroundColor = 'rgba(0,0,0,0.3)';
+            input.style.color = '#fff';
+            input.style.fontSize = '14px';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copy';
+            copyBtn.style.padding = '12px 20px';
+            copyBtn.style.borderRadius = '0 10px 10px 0';
+            copyBtn.style.border = 'none';
+            copyBtn.style.backgroundColor = '#00fff7';
+            copyBtn.style.color = '#001f2f';
+            copyBtn.style.fontWeight = 'bold';
+            copyBtn.style.cursor = 'pointer';
+            copyBtn.onclick = () => {
+                input.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                }, 2000);
+            };
+            
+            linkInput.appendChild(input);
+            linkInput.appendChild(copyBtn);
+            
+            linkContainer.appendChild(linkLabel);
+            linkContainer.appendChild(linkInput);
+            
+            // Create share options
+            const shareOptions = document.createElement('div');
+            shareOptions.style.display = 'flex';
+            shareOptions.style.justifyContent = 'center';
+            shareOptions.style.gap = '15px';
+            shareOptions.style.marginTop = '20px';
+            
+            // Email share button
+            const emailBtn = document.createElement('button');
+            emailBtn.innerHTML = '<i class="bi bi-envelope"></i> Email';
+            emailBtn.style.padding = '10px 20px';
+            emailBtn.style.borderRadius = '10px';
+            emailBtn.style.border = 'none';
+            emailBtn.style.backgroundColor = 'rgba(0,255,247,0.1)';
+            emailBtn.style.color = '#00fff7';
+            emailBtn.style.cursor = 'pointer';
+            emailBtn.onclick = () => {
+                const subject = `Pain Dashboard Analysis: ${query} (${vertical})`;
+                const body = `Check out this pain point analysis for ${query} in the ${vertical} vertical:\n\n${shareUrl}`;
+                window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+            
+            // Slack share button
+            const slackBtn = document.createElement('button');
+            slackBtn.innerHTML = '<i class="bi bi-slack"></i> Slack';
+            slackBtn.style.padding = '10px 20px';
+            slackBtn.style.borderRadius = '10px';
+            slackBtn.style.border = 'none';
+            slackBtn.style.backgroundColor = 'rgba(0,255,247,0.1)';
+            slackBtn.style.color = '#00fff7';
+            slackBtn.style.cursor = 'pointer';
+            slackBtn.onclick = () => {
+                window.open(`https://slack.com/app_redirect?app=A028UP5CX4B&channel=general&message=${encodeURIComponent(shareUrl)}`);
+            };
+            
+            // Twitter share button
+            const twitterBtn = document.createElement('button');
+            twitterBtn.innerHTML = '<i class="bi bi-twitter"></i> Twitter';
+            twitterBtn.style.padding = '10px 20px';
+            twitterBtn.style.borderRadius = '10px';
+            twitterBtn.style.border = 'none';
+            twitterBtn.style.backgroundColor = 'rgba(0,255,247,0.1)';
+            twitterBtn.style.color = '#00fff7';
+            twitterBtn.style.cursor = 'pointer';
+            twitterBtn.onclick = () => {
+                const text = `Check out this pain point analysis for ${query} in the ${vertical} vertical`;
+                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`);
+            };
+            
+            shareOptions.appendChild(emailBtn);
+            shareOptions.appendChild(slackBtn);
+            shareOptions.appendChild(twitterBtn);
+            
+            // Assemble modal
+            modalContent.appendChild(modalHeader);
+            modalContent.appendChild(linkContainer);
+            modalContent.appendChild(shareOptions);
+            modalEl.appendChild(modalContent);
+            
+            // Add modal to body
+            document.body.appendChild(modalEl);
+        }
+        
+        function renderMVPGenerator(insights) {
+            const container = document.getElementById('mvpContainer');
+            container.innerHTML = '';
+            
+            // Take the first opportunity as an example
+            if (!insights.opportunities || insights.opportunities.length === 0) {
+                container.innerHTML = '<p>No opportunities available to generate MVP</p>';
+                return;
+            }
+            
+            const opp = insights.opportunities[0];
+            
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h5>MVP Landing Page Preview</h5>
+                        <div class="mvp-preview">
+                            <div class="text-center mb-4">
+                                <h2>${opp.product_concept}</h2>
+                                <p class="lead">${opp.value_proposition}</p>
+                                <button class="btn btn-success btn-lg mt-3">Get Early Access</button>
+                            </div>
+                            
+                            <div class="row mt-5">
+                                <div class="col-md-4 text-center">
+                                    <i class="bi bi-lightning-charge" style="font-size: 2rem; color: #0d6efd;"></i>
+                                    <h5 class="mt-2">Fast</h5>
+                                    <p>Quick implementation</p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i class="bi bi-shield-check" style="font-size: 2rem; color: #0d6efd;"></i>
+                                    <h5 class="mt-2">Secure</h5>
+                                    <p>Enterprise-grade security</p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i class="bi bi-graph-up" style="font-size: 2rem; color: #0d6efd;"></i>
+                                    <h5 class="mt-2">Scalable</h5>
+                                    <p>Grows with your needs</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-5">
+                                <h4>For:</h4>
+                                <p>${Array.isArray(opp.target_users) ? opp.target_users.join(', ') : opp.target_users}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <h5>Go-to-Market Plan</h5>
+                        <div class="card mb-3">
+                            <div class="card-header">Strategy</div>
+                            <div class="card-body">
+                                <p>${opp.go_to_market}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header">Key Metrics to Track</div>
+                            <div class="card-body">
+                                <ul>
+                                    ${Array.isArray(insights.metrics.kpis) ? 
+                                      insights.metrics.kpis.map(kpi => `<li>${kpi}</li>`).join('') : 
+                                      '<li>No KPIs available</li>'}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">Validation Plan</div>
+                            <div class="card-body">
+                                <ol>
+                                    <li>Create landing page to gauge interest</li>
+                                    <li>Collect email signups for early access</li>
+                                    <li>Conduct user interviews with early adopters</li>
+                                    <li>Build minimal feature set based on feedback</li>
+                                    <li>Launch beta to initial user group</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">Technical Implementation Plan</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>Phase 1: MVP (4-6 weeks)</h6>
+                                        <ul>
+                                            <li>Core functionality only</li>
+                                            <li>Basic user authentication</li>
+                                            <li>Minimal viable feature set</li>
+                                            <li>Simple analytics integration</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Phase 2: Beta (2-3 months)</h6>
+                                        <ul>
+                                            <li>Expanded feature set</li>
+                                            <li>User feedback integration</li>
+                                            <li>Performance optimization</li>
+                                            <li>Initial integrations</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Phase 3: Public Launch (4-6 months)</h6>
+                                        <ul>
+                                            <li>Full feature implementation</li>
+                                            <li>Advanced analytics</li>
+                                            <li>Complete API ecosystem</li>
+                                            <li>Enterprise features</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="btn btn-primary" id="exportPdfBtn">
+                        <i class="bi bi-file-pdf"> </i> Export to PDF
+                    </button>
+                    <button class="btn btn-info" id="shareUrlBtn">
+                        <i class="bi bi-share"></i> Share as Link
+                    </button>
+                    <button class="btn btn-secondary">Save to Collection</button>
+                    <button class="btn btn-success">Generate Full Business Plan</button>
+                </div>
+            `;
+        }
+        
+        function renderRawJson(data) {
+            const container = document.getElementById('rawJsonContainer');
+            
+            // Format JSON with syntax highlighting
+            const jsonString = JSON.stringify(data, null, 2);
+            
+            // Apply syntax highlighting
+            const highlighted = jsonString
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    
+                    // Apply color based on class
+                    let color;
+                    switch(cls) {
+                        case 'json-key': color = '#5e9fd4'; break;
+                        case 'json-string': color = '#00d084'; break;
+                        case 'json-number': color = '#ff6b6b'; break;
+                        case 'json-boolean': color = '#ffd54f'; break;
+                        case 'json-null': color = '#ff8e8e'; break;
+                        default: color = '#e7faff';
+                    }
+                    
+                    return `<span style="color: ${color}">${match}</span>`;
+                });
+            
+            container.innerHTML = highlighted;
+            
+            // Add copy button
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copy JSON';
+            copyBtn.className = 'btn btn-sm';
+            copyBtn.style.position = 'absolute';
+            copyBtn.style.top = '15px';
+            copyBtn.style.right = '15px';
+            copyBtn.style.background = 'linear-gradient(90deg,#00fff7,#5e9fd4)';
+            copyBtn.style.color = '#001f2f';
+            copyBtn.style.fontWeight = '600';
+            copyBtn.style.border = 'none';
+            copyBtn.style.borderRadius = '20px';
+            copyBtn.style.padding = '5px 15px';
+            
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(jsonString);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy JSON';
+                }, 2000);
+            };
+            
+            // Find the parent card and make it relative for positioning
+            const parentCard = container.closest('.card');
+            if (parentCard) {
+                parentCard.style.position = 'relative';
+                parentCard.appendChild(copyBtn);
+            }
+        }
+        
+        function getSeverityColor(severity) {
+            if (severity >= 8) return 'danger';
+            if (severity >= 6) return 'warning';
+            if (severity >= 4) return 'info';
+            return 'secondary';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set container to match main app style
+            const container = document.getElementById('main-container');
+            if (container) {
+                container.classList.add('no-history');
+            }
+            
+            // Initialize scroll buttons
+            updateScrollBtns();
+            
+            // Add event listeners for export and share buttons in the header
+            const headerExportPdfBtn = document.getElementById('headerExportPdfBtn');
+            if (headerExportPdfBtn) {
+                headerExportPdfBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    exportToPdf();
+                });
+            }
+            
+            const headerShareUrlBtn = document.getElementById('headerShareUrlBtn');
+            if (headerShareUrlBtn) {
+                headerShareUrlBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    shareAsLink();
+                });
+            }
+            
+            // Check for URL parameters to auto-load analysis
+            const urlParams = new URLSearchParams(window.location.search);
+            const vertical = urlParams.get('vertical');
+            const query = urlParams.get('query');
+            
+            if (vertical && query) {
+                // Set form values
+                const verticalSelect = document.getElementById('verticalSelect');
+                const queryInput = document.getElementById('queryInput');
+                
+                if (verticalSelect && queryInput) {
+                    verticalSelect.value = vertical;
+                    queryInput.value = query;
+                    
+                    // Trigger form submission
+                    document.getElementById('queryForm').dispatchEvent(new Event('submit'));
+                }
+            }
+            
+            // Add event delegation for buttons that might be added dynamically
+            document.addEventListener('click', function(event) {
+                // Handle MVP tab export button
+                if (event.target && (event.target.id === 'exportPdfBtn' || (event.target.closest && event.target.closest('#exportPdfBtn')))) {
+                    exportToPdf();
+                    event.preventDefault();
+                    return false;
+                }
+                // Handle MVP tab share button
+                if (event.target && (event.target.id === 'shareUrlBtn' || (event.target.closest && event.target.closest('#shareUrlBtn')))) {
+                    shareAsLink();
+                    event.preventDefault();
+                    return false;
+                }
+            });
+        });
+        
+        // --- Pain Dashboard History Sidebar Logic ---
+async function fetchPainDashboardHistory() {
+  const res = await fetch('/api/history');
+  const all = await res.json();
+  // Only show pain dashboard queries (source === 'pain_dashboard' or similar)
+  return all.filter(q => q.source && q.source.toLowerCase().includes('pain'));
+}
+
+function renderPainDashboardHistorySidebar(history) {
+  const sidebar = document.getElementById('history-list');
+  if (!history.length) {
+    sidebar.innerHTML = '<li style="color:#aaa;">No previous queries yet.</li>';
+    return;
+  }
+  sidebar.innerHTML = history.map(q => `
+    <li class="history-item" data-id="${q.id}" tabindex="0" style="cursor:pointer; padding:8px 0; border-bottom:1px solid #222; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+      <div style="flex:1; min-width:0;">
+        <b>${q.query}</b> <span style="color:#00fff7;">(${q.vertical || q.source})</span>
+        <div style="font-size:0.8em;color:#aaa;">${new Date(q.timestamp).toLocaleString()}</div>
+      </div>
+      <button class="delete-history-btn" data-id="${q.id}" title="Delete" style="background: none; border: none; color: #ff6b6b; font-size: 0.2em; cursor: pointer; padding: 2px 8px; border-radius: 6px; transition: background 0.2s;">
+        <i class="bi bi-trash"></i>
+      </button>
+    </li>
+  `).join('');
+  sidebar.querySelectorAll('.history-item').forEach(el => {
+    el.onclick = async function(e) {
+      // Prevent click if delete button was clicked
+      if (e.target.closest('.delete-history-btn')) return;
+      const id = this.getAttribute('data-id');
+      const q = history.find(x => x.id == id);
+      showPainDashboardHistoryResult(q);
+    };
+  });
+  // Add delete button logic
+  sidebar.querySelectorAll('.delete-history-btn').forEach(btn => {
+    btn.onclick = async function(e) {
+      e.stopPropagation();
+      const id = this.getAttribute('data-id');
+      if (confirm('Delete this query from history?')) {
+        await fetch(`/api/history/${id}`, { method: 'DELETE' });
+        loadAndRenderPainDashboardHistory();
+      }
+    };
+  });
+}
+
+function showPainDashboardHistoryResult(item) {
+  // Restore the summary and details in the dashboard
+  if (!item || !item.result) return;
+  let data = {};
+  try {
+    data = typeof item.result === 'string' ? JSON.parse(item.result) : item.result;
+  } catch (e) {
+    data = {error: 'Could not parse summary.'};
+  }
+  if (data.error) {
+    alert(data.error);
+    return;
+  }
+  // Set global data and update UI
+  currentData = data;
+  document.getElementById('queryTitle').textContent = `${item.query} (${item.vertical || item.source})`;
+  document.getElementById('resultsContainer').style.display = 'block';
+  showContent('summary-tab', currentData);
+  // Optionally scroll to results
+  document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- History Sidebar Toggle ---
+const sidebar = document.getElementById('history-sidebar');
+const toggleBtn = document.getElementById('history-toggle-btn');
+let sidebarOpen = true;
+
+toggleBtn.onclick = function () {
+  sidebarOpen = !sidebarOpen;
+
+  if (sidebarOpen) {
+    sidebar.style.width = '210px';
+    sidebar.style.padding = '1.2rem 0.5rem';
+    sidebar.style.borderRight = '1.5px solid rgba(0,255,247,0.12)';
+    sidebar.style.boxShadow = '2px 0 14px rgba(0,255,247,0.05)';
+    toggleBtn.style.left = '290px';
+    toggleBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+    document.getElementById('main-container').classList.add('with-history');
+    document.getElementById('main-container').classList.remove('no-history');
+  } else {
+    sidebar.style.width = '0';
+    sidebar.style.padding = '0'; // hide inner spacing
+    sidebar.style.borderRight = 'none'; // remove border
+    sidebar.style.boxShadow = 'none'; // remove glow
+    toggleBtn.style.left = '80px';
+    toggleBtn.querySelector('svg').style.transform = 'rotate(180deg)';
+    document.getElementById('main-container').classList.remove('with-history');
+    document.getElementById('main-container').classList.add('no-history');
+  }
+};
+
+
+// Loads and renders the pain dashboard history sidebar
+async function loadAndRenderPainDashboardHistory() {
+  const history = await fetchPainDashboardHistory();
+  renderPainDashboardHistorySidebar(history);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadAndRenderPainDashboardHistory();
+});
+    </script>
+</body>
+</html>

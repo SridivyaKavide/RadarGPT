@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FindRadar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --history-width: 210px;
+      --collapsed-history-width: 0px;
+      --search-max-width: 1100px;
+      --search-bottom: 20px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .fixed-title {
+      position: static;
+      top: 2.5rem;
+      left: 0;
+      width: 100vw;
+      z-index: 40;
+      text-align: center;
+      pointer-events: none;
+    }
+    .fixed-title h1 {
+      display: inline-block;
+      font-size: 2rem;
+      color:rgb(248, 248, 248);
+      letter-spacing: 2px;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      background: linear-gradient(90deg,rgb(249, 249, 249),rgb(254, 254, 254),rgb(244, 246, 246));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      margin-bottom: 0;
+      margin-top: 2.5rem;
+      pointer-events: auto;
+    }
+    .container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-top: 6rem;
+      padding-bottom: 5rem;
+      justify-content: center;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    .container.with-history {
+      margin-left: calc(var(--side-nav-width) + var(--history-width));
+      align-items: flex-start;
+      text-align: left;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    .container.no-history {
+      margin-left: var(--side-nav-width);
+      align-items: center;
+      text-align: center;
+      transition: margin-left var(--transition), left var(--transition);
+    }
+    #intro-cards {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 2.5rem;
+      width: 100%;
+      max-width: 600px;
+      transition: opacity 0.5s, transform 0.5s;
+      z-index: 10;
+      flex-wrap: wrap;
+    }
+    .intro-card {
+      flex: 1 1 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 180px;
+      max-width: 240px;
+      background: rgba(0,255,247,0.13);
+      border: 1.5px solid rgba(0,255,247,0.23);
+      border-radius: 16px;
+      color: #fff;
+      padding: 0.9rem 1rem 1.1rem 1rem;
+      box-shadow: 0 4px 18px rgba(0,255,247,0.10);
+      opacity: 0;
+      transform: translateY(18px) scale(0.97);
+      animation: fadeInUp 0.7s forwards;
+      animation-delay: var(--delay, 0s);
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.18s, transform 0.18s;
+      cursor: pointer;
+      height: 230px;
+    }
+    .intro-card:hover {
+      box-shadow: 0 8px 32px #00fff7, 0 0 0 2px #5e9fd4;
+      transform: translateY(-2px) scale(1.025);
+      background: rgba(0,255,247,0.18);
+    }
+    .intro-card .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      animation: pulseGlow 2s infinite alternate;
+    }
+    .intro-card h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.5px;
+      background: linear-gradient(90deg,#00fff7,#5e9fd4,#00fff7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 8px #00fff755;
+    }
+    .intro-card p {
+      font-size: 0.75rem;
+      color: #e7faff;
+      line-height: 1.45;
+      margin-bottom: 0;
+      margin-top: 0;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @keyframes pulseGlow {
+      0% { text-shadow: 0 0 0 #00fff7; }
+      100% { text-shadow: 0 0 24px #00fff7, 0 0 12px #5e9fd4; }
+    }
+    #output {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding-bottom: 120px;
+      min-height: 50px;
+    }
+    .history-sidebar {
+      position: fixed;
+      top: 0;
+      left: var(--side-nav-width);
+      width: var(--history-width);
+      height: 100vh;
+      background: rgba(0, 255, 247, 0.07);
+      box-shadow: 2px 0 14px rgba(0,255,247,0.05);
+      border-right: 1.5px solid rgba(0,255,247,0.12);
+      z-index: 19;
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      overflow-y: auto;
+      transition: width var(--transition), left var(--transition), opacity var(--transition), padding var(--transition);
+    }
+    .history-sidebar.collapsed {
+      width: var(--collapsed-history-width);
+      min-width: 0;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .history-title {
+      font-size: 1.1rem;
+      color: #00fff7;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      text-align: left;
+      padding-left: 1rem;
+    }
+    .history-list {
+      list-style: none;
+      padding: 0 0.5rem;
+      margin: 0;
+    }
+    .history-list li {
+      margin-bottom: 0.5rem;
+      padding: 0.7rem 1rem;
+      background: rgba(20,20,20,0.45);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+      font-size: 0.98rem;
+      text-align: left;
+      border: 1.5px solid rgba(0,255,247,0.15);
+      word-break: break-word;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .history-list li.active,
+    .history-list li:focus {
+      background: rgba(20,20,20,0.75);
+      color: #fff;
+      font-weight: 700;
+    }
+    .history-list li:hover {
+      background: rgba(20,20,20,0.62);
+      color: #fff;
+    }
+    .delete-history-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.3em;
+      cursor: pointer;
+      margin-left: 0.6em;
+      padding: 0 0.2em;
+      opacity: 0.7;
+      transition: opacity 0.15s, color 0.2s;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1;
+    }
+    .delete-history-btn:hover {
+      opacity: 1;
+      color: #ff4b4b;
+    }
+    .new-search-history-btn {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      padding: 0.6em 1.2em;
+      margin: 0.5em 0 1.2em 0;
+      width: 100%;
+      font-size: 1em;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.12);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      display: block;
+    }
+    .new-search-history-btn:hover, .new-search-history-btn:focus {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+    }
+    .history-toggle-btn {
+      position: fixed;
+      top: 16px;
+      left: calc(var(--side-nav-width) + var(--history-width) - 16px);
+      z-index: 30;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #00fff7;
+      color: #001f2f;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      cursor: pointer;
+      transition: left var(--transition), background 0.18s;
+    }
+    .history-sidebar.collapsed + .history-toggle-btn {
+      left: calc(var(--side-nav-width) - 16px);
+    }
+    .history-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: #001f2f;
+      transition: transform 0.25s;
+    }
+    .history-sidebar.collapsed ~ .history-toggle-btn svg {
+      transform: rotate(180deg);
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+
+#goTopBtn, #goBottomBtn {
+  position: fixed;
+  right: 32px;
+  width: 50px;
+  height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(0,255,247,0.3);
+  box-shadow: 0 4px 20px rgba(0,255,247,0.25);
+  cursor: pointer;
+  z-index: 1200;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: none;
+  padding: 0;
+  color: #00fff7;
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'Poppins', sans-serif;
+}
+#goTopBtn:hover, #goBottomBtn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,255,247,0.4);
+  background: rgba(0,0,0,0.8);
+  border-color: rgba(0,255,247,0.6);
+}
+#goTopBtn:active, #goBottomBtn:active {
+  transform: translateY(0);
+}
+#goTopBtn { bottom: 150px; }
+#goBottomBtn { bottom: 90px; }
+#goTopBtn span, #goBottomBtn span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 700px) {
+  #goTopBtn, #goBottomBtn { 
+    right: 16px; 
+    width: 45px; 
+    height: 45px; 
+    border-radius: 10px;
+    font-size: 20px;
+  }
+  #goTopBtn { bottom: 80px; }
+  #goBottomBtn { bottom: 24px; }
+}
+
+
+
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.7rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+    .search-section {
+      position: fixed;
+      left: calc(var(--side-nav-width) + var(--history-width));
+      right: 0;
+      bottom: var(--search-bottom);
+      width: auto;
+      max-width: var(--search-max-width);
+      margin: 0 auto;
+      background: rgba(0, 0, 0, 0);
+      z-index: 30;
+      padding: 0 1rem;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      transition: left var(--transition), max-width var(--transition);
+    }
+    .history-sidebar.collapsed ~ .search-section,
+    .search-section.full {
+      left: var(--side-nav-width);
+      max-width: 100vw;
+    }
+    .search-box {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      padding: 0.4rem 1.2rem;
+      border-radius: 50px;
+      background: rgba(0, 255, 247, 0.05);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 255, 247, 0.2);
+      box-shadow: 0 0 10px rgba(0, 255, 247, 0.15);
+      transition: all 0.3s ease-in-out;
+      animation: neonGlow 3s infinite alternate;
+      gap: 1rem;
+      position: relative;
+      z-index: 998;
+      flex-wrap: nowrap;
+      pointer-events: auto;
+    }
+    @keyframes neonGlow {
+      0% { box-shadow: 0 0 10px rgba(0,255,247,0.15); }
+      100% { box-shadow: 0 0 25px rgba(0,255,247,0.5); }
+    }
+    .source-dropdown {
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      border: 1.5px solid rgba(0,255,247,0.18);
+      border-radius: 18px;
+      padding: 0.5rem 2.2rem;
+      font-size: 1.22rem;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      outline: none;
+      margin-right: 1rem;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(0,255,247,0.08);
+      cursor: pointer;
+      min-width: 220px;
+      max-width: 300px;
+      background-image: url("data:image/svg+xml;charset=UTF-8,<svg width='18' height='18' viewBox='0 0 18 18' fill='white' xmlns='http://www.w3.org/2000/svg'><path d='M4 7l5 5 5-5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 1.2rem center;
+      background-size: 1.2em;
+    }
+    .source-dropdown:focus {
+      border: 1.5px solid #00fff7;
+      box-shadow: 0 0 10px #00fff7, 0 0 20px #5e9fd4;
+    }
+    .source-dropdown::-ms-expand { display: none; }
+    .search-box input {
+      flex: 1;
+      padding: 0.4rem 1rem;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 50px;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-family: 'Poppins';
+      min-width: 0;
+    }
+    .search-box input::placeholder {
+      color: #ccc;
+    }
+    .send-button {
+      background-color: #00fff7;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(0,255,247,0.5);
+      flex-shrink: 0;
+    }
+    .send-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 14px rgba(0,255,247,0.9);
+    }
+    .send-button svg {
+      width: 20px;
+      height: 20px;
+      fill: black;
+    }
+    .result {
+      background: rgba(0,255,247,0.09);
+      border: 1.5px solid rgba(0,255,247,0.18);
+      padding: 1.5rem 2rem;
+      margin-top: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,255,247,0.08);
+      width: 100%;
+      max-width: 900px;
+      color: #fff;
+      text-align: left;
+    }
+    .post-content {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1.2rem;
+      flex-wrap: wrap;
+      text-align: left;
+    }
+    .post-block {
+      flex: 1 1 45%;
+      background: rgba(0,255,247,0.07);
+      border: 1.5px solid rgba(0,255,247,0.17);
+      padding: 1rem;
+      border-radius: 10px;
+      color: #fff;
+      text-align: left;
+    }
+    .post-block strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #00b8d4;
+    }
+    .toggle-content {
+      max-height: 140px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .toggle-content.expanded {
+      max-height: none;
+    }
+    .toggle-button {
+      margin-top: 0.5rem;
+      background: none;
+      color: #00b8d4;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    #loadMoreBtn {
+      margin: 2.5rem auto 0 auto;
+      display: block;
+      padding: 0.8rem 2rem;
+      font-size: 1rem;
+      background: linear-gradient(135deg, #00fff7, #5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 5px 12px rgba(0,255,247,0.15);
+      position: relative;
+      z-index: 2;
+    }
+    a {
+      color: #00fff7;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    ul, ol {
+      margin: 0.5rem 0 0 1.2rem;
+      padding-left: 1em;
+    }
+    ol {
+      list-style-type: decimal;
+    }
+    ul li, ol li {
+      margin-bottom: 0.3rem;
+    }
+    .show-sources-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6em;
+      padding: 0.7em 1.7em;
+      font-size: 1.07em;
+      font-weight: 700;
+      border: none;
+      border-radius: 22px;
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      cursor: pointer;
+      margin: 1.2em 0 1em 0;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.15s;
+      outline: none;
+    }
+    .show-sources-btn:hover, .show-sources-btn:focus {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+      transform: scale(1.04);
+    }
+    .show-sources-btn svg {
+      width: 1.3em;
+      height: 1.3em;
+      fill: #001f2f;
+      margin-right: 0.15em;
+    }
+    #sourceSection {
+      display: none;
+      margin-top: 1.2em;
+      background: rgba(0,255,247,0.06);
+      border-radius: 14px;
+      padding: 1.2em 1.5em;
+      box-shadow: 0 2px 16px rgba(0,255,247,0.07), 0 0 0 1px #22384a;
+      text-align: left;
+    }
+    #sourceSection h3 {
+      margin-bottom: 0.5em;
+      margin-top: 1em;
+      color: #00fff7;
+      font-size: 1.1em;
+      font-weight: 700;
+      text-align: left;
+    }
+    #sourceSection ol {
+      margin: 0 0 1em 1.5em;
+      padding-left: 1em;
+      text-align: left;
+    }
+    #sourceSection li {
+      margin-bottom: 0.3em;
+      color: #e7faff;
+      font-size: 1em;
+      text-align: left;
+      list-style-type: decimal;
+    }
+    
+    /* Edit and Save button styles */
+    .edit-summary-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #00fff7;
+      margin-right: 10px;
+      font-size: 0.9em;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .edit-summary-btn:hover {
+      background: rgba(0,255,247,0.1);
+    }
+    
+    .save-summary-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: #00fff7;
+      font-size: 0.9em;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .save-summary-btn:hover {
+      background: rgba(0,255,247,0.1);
+    }
+    @media (max-width: 1000px) {
+      #intro-cards { flex-direction: column; align-items: center; gap: 2rem; }
+      .intro-card { max-width: 95vw; }
+      .container.with-history { margin-left: 0 !important; align-items: center; text-align: center; }
+      .fixed-title { top: 1.2rem; }
+    }
+    @media (max-width: 700px) {
+      .side-nav {
+        width: 48px;
+      }
+      .history-sidebar {
+        left: 48px;
+        width: 120px;
+        font-size: 0.9em;
+      }
+      .search-section { left: 0; right: 0; padding: 0 5px; }
+      .search-box { max-width: 40vw; }
+      #output { padding-bottom: 160px; }
+      .source-dropdown { min-width: 120px; font-size: 1rem; }
+      .container.with-history { margin-left: 0 !important; align-items: center; text-align: center; }
+      .fixed-title { top: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="star-bg-canvas"></canvas>
+  <div class="side-nav">
+  <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+    <span>RadarGPT</span>
+  </a><br>
+  <a href="{{ url_for('findradar') }}" title="FindRadar" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/search.png" alt="FindRadar"/>
+    <span>FindRadar</span>
+  </a><br>
+  <a href="/saved" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+    <span>Saved</span>
+  </a><br>
+  
+  <a href="/verticals" title="Verticals" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+    <span>Verticals</span>
+  </a><br>
+  <a href="/pain-dashboard" title="Pain Dashboard" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/bar-chart.png" alt="Pain Dashboard"/>
+    <span>Pain Dashboard</span>
+  </a><br>
+  <a href="/teams" title="Teams" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/collaboration.png" alt="Teams"/>
+    <span>Teams</span>
+  </a><br>
+  <a href="/integrations" title="Integrations" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/link.png" alt="Integrations"/>
+    <span>Integrate</span>
+  </a>
+</div>
+  <div class="history-sidebar" id="history-sidebar">
+    <div class="history-title">History</div>
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+      <button class="new-search-history-btn" id="new-search-history-btn" style="flex: 3;">+ New Search</button>
+      <button class="new-search-history-btn" id="clear-history-btn" style="flex: 1; background: linear-gradient(90deg,#ff6b6b,#ff8e8e);" title="Clear all history">🗑️</button>
+    </div>
+    <ul class="history-list" id="history-list"></ul>
+  </div>
+  <button class="history-toggle-btn" id="history-toggle-btn" title="Toggle History Sidebar" aria-label="Toggle History Sidebar">
+    <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+  <div class="fixed-title"><h1>FindRadar</h1></div>
+  <div class="container" id="main-container">
+    <div id="intro-cards">
+      <div class="intro-card" style="--delay:0s;">
+        <div class="card-icon">👽</div>
+        <h2>Reddit</h2>
+        <p>
+          Search real-time unsolved questions and pain points from Reddit communities. Ideal for discovering trending problems, startup ideas, and what people are struggling with right now.
+        </p>
+      </div>
+      <div class="intro-card" style="--delay:0.15s;">
+        <div class="card-icon">🌐</div>
+        <h2>Reddit + StackOverflow</h2>
+        <p>
+          Get a broader view by combining Reddit discussions with Stack Overflow developer questions. Perfect for tech, product, and startup research—see what both users and experts are asking.
+        </p>
+      </div>
+    </div>
+    <div id="output"></div>
+  </div>
+  <div class="search-section" id="search-section">
+    <div class="search-box">
+      <select class="source-dropdown" id="source-dropdown" aria-label="Select source">
+        <option value="reddit" selected>Reddit</option>
+        <option value="all">Reddit + StackOverflow</option>
+      </select>
+      <input type="text" id="keyword" placeholder="Enter a topic (e.g. mental health)" aria-label="Search input"/>
+      <button class="send-button" id="send-btn" title="Search" aria-label="Search button">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <script>
+    // Starfield background (unchanged)
+    const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [];
+    const STAR_COUNT = 180;
+    function resize() {
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w;
+      canvas.height = h;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    function randomStar() {
+      return {
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 1.2 + 0.3,
+        dx: (Math.random() - 0.5) * 0.08,
+        dy: (Math.random() - 0.5) * 0.08,
+        twinkle: Math.random() * Math.PI * 2
+      };
+    }
+    function createStars() {
+      stars = [];
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push(randomStar());
+      }
+    }
+    createStars();
+    function drawStars() {
+      ctx.clearRect(0, 0, w, h);
+      for (let i = 0; i < stars.length; i++) {
+        let star = stars[i];
+        star.twinkle += 0.03 + Math.random() * 0.02;
+        let opacity = 0.6 + 0.4 * Math.sin(star.twinkle);
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+        ctx.fillStyle = "#fff";
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.restore();
+        star.x += star.dx;
+        star.y += star.dy;
+        if (star.x < 0) star.x = w;
+        if (star.x > w) star.x = 0;
+        if (star.y < 0) star.y = h;
+        if (star.y > h) star.y = 0;
+      }
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+    window.addEventListener('resize', () => {
+      resize();
+      createStars();
+    });
+
+    // History and Search Logic with API calls
+    let selectedSource = 'reddit';
+    let searchHistory = [];
+    let currentPosts = [];
+    let currentHasMore = false;
+    let currentKeyword = '';
+
+    // Load history from server
+    async function loadHistoryFromServer() {
+      const res = await fetch('/api/history');
+      if (!res.ok) return [];
+      return await res.json();
+    }
+
+    // Add history to server
+    async function addHistoryToServer(item) {
+      const res = await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+      return await res.json();
+    }
+
+    // Update history on server
+    async function updateHistoryOnServer(id, item) {
+      await fetch(`/api/history/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+    }
+
+    // Delete history on server
+    async function deleteHistoryOnServer(id) {
+      await fetch(`/api/history/${id}`, { method: 'DELETE' });
+    }
+
+    // Load history from server on page load
+    window.onload = async function() {
+      searchHistory = await loadHistoryFromServer();
+      renderHistorySidebar();
+      var sidebar = document.getElementById('history-sidebar');
+      var container = document.getElementById('main-container');
+      if (sidebar.classList.contains('collapsed')) {
+        container.classList.remove('with-history');
+        container.classList.add('no-history');
+      } else {
+        container.classList.remove('no-history');
+        container.classList.add('with-history');
+      }
+    };
+
+    document.getElementById('source-dropdown').addEventListener('change', function() {
+      selectedSource = this.value;
+    });
+    document.getElementById('send-btn').addEventListener('click', () => {
+      analyzeAndStore();
+    });
+    document.getElementById('keyword').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        analyzeAndStore();
+      }
+    });
+
+    function hideIntroCards() {
+      const intro = document.getElementById('intro-cards');
+      if (intro) intro.style.display = 'none';
+    }
+
+    function showIntroCards() {
+      const intro = document.getElementById('intro-cards');
+      if (intro) intro.style.display = '';
+    }
+
+    function renderHistorySidebar(activeIndex = null) {
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      searchHistory.forEach((item, i) => {
+        const li = document.createElement('li');
+        const span = document.createElement('span');
+        span.textContent = item.query + (item.source === "all" ? " (Reddit+SO)" : " (Reddit)");
+        span.style.flex = "1";
+        span.onclick = () => restoreHistory(i);
+        li.appendChild(span);
+        // Delete button (cross)
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-history-btn';
+        delBtn.title = "Delete this search";
+        delBtn.innerHTML = '&times;';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteHistoryItem(item.id, i);
+        };
+        li.appendChild(delBtn);
+        if (i === activeIndex) li.classList.add('active');
+        list.appendChild(li);
+      });
+    }
+
+    function deleteHistoryItem(id, idx) {
+      deleteHistoryOnServer(id).then(() => {
+        searchHistory.splice(idx, 1);
+        renderHistorySidebar();
+        document.getElementById("output").innerHTML = "";
+        showIntroCards();
+      }).catch(err => {
+        console.error('Error deleting history item:', err);
+      });
+    }
+
+    async function analyzeAndStore() {
+      const keyword = document.getElementById("keyword").value.trim();
+      if (!keyword) return alert("Please enter a keyword.");
+      
+      hideIntroCards();
+      document.getElementById("output").innerHTML = `<p>🔄 Loading...</p>`;
+      let outputHTML = "";
+      let posts = [];
+      let hasMore = false;
+      if (selectedSource === "reddit") {
+        try {
+          const data = await fetchRedditPosts(keyword, 0);
+          posts = data.posts || [];
+          hasMore = !!data.has_more;
+          if (!posts.length) {
+            outputHTML = "<p>No Reddit posts found.</p>";
+          } else {
+            outputHTML = renderRedditPosts(posts);
+            if (hasMore) outputHTML += `<button id="loadMoreBtn">Load More</button>`;
+          }
+        } catch (e) {
+          outputHTML = `<p style="color:red;">❌ Error: ${e.message}</p>`;
+        }
+      } else {
+        try {
+          const res = await fetch(`/search?q=${encodeURIComponent(keyword)}`);
+          const data = await res.json();
+          let formattedSummary = data.summary || "";
+          let painPoints = "", challenges = "", insights = "";
+          const painRegex = /pain points?:?\s*(.*?)(?=\n|challenges?:|insights?:|$)/is;
+          const challengeRegex = /challenges?:?\s*(.*?)(?=\n|insights?:|pain points?:|$)/is;
+          const insightsRegex = /insights?:?\s*(.*)/is;
+          const painMatch = formattedSummary.match(painRegex);
+          const challengeMatch = formattedSummary.match(challengeRegex);
+          const insightMatch = formattedSummary.match(insightsRegex);
+         
+          if (insightMatch) {
+            insights = `<div class="post-block"><strong>💡 Insights</strong><p>${markdownToHtml(insightMatch[1].trim())}</p></div>`;
+          }
+          
+          const summaryId = `summary-${Date.now()}`;
+          outputHTML = `
+<h2>🔍 AI Summary</h2>
+  <div class="summary-header">
+    <button class="edit-summary-btn" onclick="enableEditing('${summaryId}')">
+      <span>✏️ Edit</span>
+    </button>
+    <button class="save-summary-btn" onclick="saveEditing('${summaryId}')">
+      <span>💾 Save</span>
+    </button>
+  </div>
+  <div class="post-content" id="${summaryId}">
+    ${painPoints || ""}
+    ${challenges || ""}
+    ${insights || ""}
+  </div>
+  <button
+    class="show-sources-btn"
+    id="saveToStacksBtn-${summaryId}"
+    data-save-id="${summaryId}"
+    style="background:linear-gradient(90deg,#ffe082,#ffd54f);margin-right:1em;"
+    onclick="showSaveDropdown(this, '${escapeHtml(keyword)}', '${summaryId}')"
+  >
+    <span style="font-size: 1.2em;">🔖</span>
+    <span style="font-size: 0.95em;">Save to Stacks</span>
+  </button>
+  <button id="showSourcesBtn" class="show-sources-btn" onclick="toggleSources()">
+    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm4 0h14v-2H7v2z"/></svg>
+    <span>Show Sources</span>
+  </button>
+  <div id="sourceSection">
+    <h3>📌 Reddit</h3>
+    <ol>
+      ${data.reddit.map(p => `<li><a href="${p.link}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.title)}</a></li>`).join('')}
+    </ol>
+    <h3>💬 StackOverflow</h3>
+    <ol>
+      ${data.stack.map(p => `<li><a href="${p.link}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.title)}</a></li>`).join('')}
+    </ol>
+  </div>
+`;
+
+        } catch (e) {
+          outputHTML = `<p style="color:red;">Error fetching multi-source data: ${e.message}</p>`;
+        }
+      }
+      // Generate a unique query ID for chat functionality
+      const query_id = 'q_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+      
+      // Add chat thread container to the output
+      if (selectedSource === "all") {
+        outputHTML += renderChatThread(query_id);
+      }
+      
+      document.getElementById("output").innerHTML = outputHTML;
+      document.getElementById("intro-cards").style.display = "none";
+      
+      // Store in database
+      const historyItem = { 
+        query: keyword, 
+        source: selectedSource, 
+        outputHTML, 
+        posts, 
+        hasMore, 
+        start: posts.length,
+        timestamp: new Date().toISOString(),
+        query_id: query_id,
+        chatMessages: [] // Initialize empty chat messages array
+      };
+      
+      try {
+        const id = await addHistoryToServer(historyItem);
+        if (id) {
+          historyItem.id = id;
+          searchHistory.push(historyItem);
+          renderHistorySidebar(searchHistory.length - 1);
+        }
+      } catch (err) {
+        console.error('Error saving to database:', err);
+      }
+      
+      currentPosts = posts;
+      currentHasMore = hasMore;
+      currentKeyword = keyword;
+      attachLoadMore(keyword, posts, hasMore);
+    }
+
+    function restoreHistory(index) {
+      const item = searchHistory[index];
+      document.getElementById("output").innerHTML = item.outputHTML;
+      document.getElementById("keyword").value = item.query;
+      document.getElementById("source-dropdown").value = item.source;
+      renderHistorySidebar(index);
+      currentPosts = item.posts || [];
+      currentHasMore = item.hasMore;
+      currentKeyword = item.query;
+      document.getElementById("intro-cards").style.display = "none";
+      attachLoadMore(item.query, item.posts || [], item.hasMore, index);
+      
+      // Reattach edit/save handlers
+      const editBtn = document.querySelector('.edit-summary-btn');
+      const saveBtn = document.querySelector('.save-summary-btn');
+      if (editBtn && saveBtn) {
+        const summaryDiv = document.querySelector('.post-content');
+        if (summaryDiv && summaryDiv.id) {
+          const summaryId = summaryDiv.id;
+          editBtn.onclick = () => enableEditing(summaryId);
+          saveBtn.onclick = () => saveEditing(summaryId);
+        }
+      }
+      
+      // Reattach chat handlers if this is a Reddit+StackOverflow result
+      if (item.source === "all" && item.query_id) {
+        attachChatHandlers(item.query_id);
+      }
+    }
+
+    async function fetchRedditPosts(keyword, start) {
+      const res = await fetch("/fetch_posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword, start, batch_size: 5 })
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.statusText}`);
+      return await res.json();
+    }
+
+    function renderRedditPosts(posts) {
+      return posts.map(post => `
+        <div class="result">
+          <h2>${escapeHtml(post.title || "")}</h2>
+          <div class="post-content">
+            <div class="post-block">
+              <strong>Problem Summary:</strong>
+              <div class="toggle-content">${markdownToHtml(post.problems_summary || "")}</div>
+              <button class="toggle-button" onclick="toggleContent(this)">Show More</button>
+            </div>
+            <div class="post-block">
+              <strong>Discussion:</strong>
+              <div class="toggle-content">${markdownToHtml((post.comments || []).join('\n'))}</div>
+              <button class="toggle-button" onclick="toggleContent(this)">Show More</button>
+            </div>
+          </div>
+          <a href="${post.url || post.link || "#"}" target="_blank" rel="noopener">View on Reddit</a>
+        </div>
+      `).join('');
+    }
+
+    function attachLoadMore(keyword, posts, hasMore, historyIndex) {
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      if (loadMoreBtn && hasMore) {
+        loadMoreBtn.onclick = async function() {
+          loadMoreBtn.disabled = true;
+          loadMoreBtn.textContent = "Loading...";
+          try {
+            const data = await fetchRedditPosts(keyword, posts.length);
+            if (data.posts && data.posts.length > 0) {
+              posts = posts.concat(data.posts);
+              let html = renderRedditPosts(posts);
+              let more = data.has_more;
+              if (more) html += `<button id="loadMoreBtn">Load More</button>`;
+              document.getElementById("output").innerHTML = html;
+              
+              if (typeof historyIndex === "number") {
+                const item = searchHistory[historyIndex];
+                item.posts = posts;
+                item.hasMore = more;
+                item.outputHTML = html;
+                
+                // Update in database
+                updateHistoryOnServer(item.id, item).catch(err => {
+                  console.error('Error updating search history:', err);
+                });
+              } else {
+                const item = searchHistory[searchHistory.length - 1];
+                item.posts = posts;
+                item.hasMore = more;
+                item.outputHTML = html;
+                
+                // Update in database
+                updateHistoryOnServer(item.id, item).catch(err => {
+                  console.error('Error updating search history:', err);
+                });
+              }
+              
+              attachLoadMore(keyword, posts, more, historyIndex);
+            } else {
+              loadMoreBtn.remove();
+            }
+          } catch (e) {
+            loadMoreBtn.textContent = "Error";
+          }
+        };
+      }
+    }
+
+    function toggleContent(btn) {
+      const content = btn.previousElementSibling;
+      content.classList.toggle("expanded");
+      btn.textContent = content.classList.contains("expanded") ? "Show Less" : "Show More";
+    }
+
+    function toggleSources() {
+      const btn = document.getElementById("showSourcesBtn");
+      const section = document.getElementById("sourceSection");
+      if (btn && section) {
+        if (section.style.display === "none" || section.style.display === "") {
+          section.style.display = "block";
+          btn.querySelector("span").textContent = "Hide Sources";
+        } else {
+          section.style.display = "none";
+          btn.querySelector("span").textContent = "Show Sources";
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== "string") return "";
+      return str.replace(/[&<>"']/g, function(m) {
+        return ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        })[m];
+      });
+    }
+
+    function markdownToHtml(md) {
+      if (typeof md !== "string") return "";
+      return md
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<b>$1</b>')
+        .replace(/\*(.*?)\*/gim, '<i>$1</i>')
+        .replace(/^\s*-\s+(.*)$/gim, '<li>$1</li>')
+        .replace(/\n/g, '<br>');
+    }
+    
+    // Enable editing of summary content
+    function enableEditing(summaryId) {
+      const summaryDiv = document.getElementById(summaryId);
+      if (!summaryDiv) return;
+      
+      summaryDiv.contentEditable = "true";
+      summaryDiv.focus();
+      summaryDiv.style.outline = "2px solid #00fff7";
+      
+      // Show save button, hide edit button
+      const editBtn = document.querySelector('.edit-summary-btn');
+      const saveBtn = document.querySelector('.save-summary-btn');
+      if (editBtn) editBtn.style.display = "none";
+      if (saveBtn) saveBtn.style.display = "inline-flex";
+    }
+    
+    // Save edited summary content
+    function saveEditing(summaryId) {
+      const summaryDiv = document.getElementById(summaryId);
+      if (!summaryDiv) return;
+      
+      summaryDiv.contentEditable = "false";
+      summaryDiv.style.outline = "none";
+      
+      // Show edit button, hide save button
+      const editBtn = document.querySelector('.edit-summary-btn');
+      const saveBtn = document.querySelector('.save-summary-btn');
+      if (editBtn) editBtn.style.display = "inline-flex";
+      if (saveBtn) saveBtn.style.display = "none";
+      
+      // Save to database
+      const currentItem = searchHistory.find(item => item.outputHTML.includes(summaryId));
+      if (currentItem) {
+        // Update the HTML in the item
+        const updatedHTML = document.getElementById('output').innerHTML;
+        currentItem.outputHTML = updatedHTML;
+        
+        // Save to database
+        updateHistoryOnServer(currentItem.id, currentItem).catch(err => {
+          console.error('Error updating search history:', err);
+        });
+      }
+    }
+
+    // History toggle logic: move content when open, center when closed
+    document.getElementById('history-toggle-btn').onclick = function() {
+      var sidebar = document.getElementById('history-sidebar');
+      var container = document.getElementById('main-container');
+      sidebar.classList.toggle('collapsed');
+      var searchSection = document.getElementById('search-section');
+      if (sidebar.classList.contains('collapsed')) {
+        searchSection.classList.add('full');
+        container.classList.remove('with-history');
+        container.classList.add('no-history');
+      } else {
+        searchSection.classList.remove('full');
+        container.classList.remove('no-history');
+        container.classList.add('with-history');
+      }
+    };
+
+    // New Search button in history bar logic
+    document.getElementById('new-search-history-btn').onclick = function() {
+      document.getElementById("output").innerHTML = "";
+      document.getElementById("keyword").value = "";
+      showIntroCards();
+    };
+    
+    // Clear History button logic
+    document.getElementById('clear-history-btn').onclick = function() {
+      if (confirm('Are you sure you want to clear all search history?')) {
+        fetch('/api/history', { method: 'DELETE' })
+          .then(() => {
+            searchHistory = [];
+            renderHistorySidebar();
+            document.getElementById("output").innerHTML = "";
+            showIntroCards();
+            alert('History cleared successfully');
+          })
+          .catch(err => {
+            console.error('Error clearing history:', err);
+            alert('Error clearing history');
+          });
+      }
+    };
+
+    // Collection dropdown functionality
+    async function showCollectionDropdown(summaryId, keyword) {
+      const dropdown = document.getElementById(`collection-dropdown-${summaryId}`);
+      
+      // Toggle dropdown visibility
+      if (dropdown.style.display === 'none') {
+        // Clear previous content
+        dropdown.innerHTML = '<div style="padding:10px; text-align:center;">Loading collections...</div>';
+        dropdown.style.display = 'block';
+        
+        // Build dropdown content
+        let html = '<ul style="list-style:none; padding:0; margin:0;">';
+        html += `<li style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #22384a;" 
+                    onmouseover="this.style.background='rgba(0,255,247,0.1)'" 
+                    onmouseout="this.style.background='transparent'"
+                    onclick="directSaveToStacks('${keyword}', '${summaryId}')">Default Collection</li>`;
+        html += `<li style="padding:8px 12px; cursor:pointer; color:#00fff7;" 
+                    onmouseover="this.style.background='rgba(0,255,247,0.1)'" 
+                    onmouseout="this.style.background='transparent'"
+                    onclick="createNewCollection('${summaryId}', '${keyword}')">+ Create new collection</li>`;
+        html += '</ul>';
+        
+        dropdown.innerHTML = html;
+      } else {
+        dropdown.style.display = 'none';
+      }
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function closeDropdown(e) {
+        if (!dropdown.contains(e.target) && e.target.id !== `saveToStacksBtn-${summaryId}`) {
+          dropdown.style.display = 'none';
+          document.removeEventListener('click', closeDropdown);
+        }
+      });
+    }
+
+    function directSaveToStacks(keyword, summaryId) {
+      const content = document.getElementById(summaryId).innerHTML;
+      const sources = document.getElementById('sourceSection') ? document.getElementById('sourceSection').innerHTML : '';
+      const button = document.getElementById(`saveToStacksBtn-${summaryId}`);
+      
+      // Close the dropdown
+      document.getElementById(`collection-dropdown-${summaryId}`).style.display = 'none';
+      
+      // Call the saveToStacks function from save-to-stacks.js
+      saveToStacks(keyword, content, button, sources);
+    }
+
+    function createNewCollection(summaryId, keyword) {
+      const dropdown = document.getElementById(`collection-dropdown-${summaryId}`);
+      
+      // Show input field for new collection name
+      dropdown.innerHTML = `
+        <div style="padding:10px;">
+          <input type="text" id="new-collection-name" placeholder="Collection name" 
+                 style="width:100%; padding:8px; border:1px solid #00fff7; background:#0b1c26; color:white; border-radius:4px;">
+          <div style="display:flex; margin-top:8px; gap:5px;">
+            <button onclick="saveNewCollection('${summaryId}', '${keyword}')" 
+                    style="flex:1; background:#00fff7; color:#001f2f; border:none; padding:5px; border-radius:4px; cursor:pointer;">Save</button>
+            <button onclick="showCollectionDropdown('${summaryId}', '${keyword}')" 
+                    style="flex:1; background:#22384a; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      `;
+      
+      // Focus the input field
+      setTimeout(() => {
+        document.getElementById('new-collection-name').focus();
+      }, 10);
+    }
+
+    function saveNewCollection(summaryId, keyword) {
+      const newName = document.getElementById('new-collection-name').value.trim();
+      if (!newName) return;
+      
+      // Save the content directly
+      directSaveToStacks(keyword, summaryId);
+      
+      // Show success message
+      alert(`Saved to new collection: ${newName}`);
+    }
+    
+    // Chat functionality for Reddit+StackOverflow results
+    function renderChatThread(query_id) {
+      return `
+        <div class="chat-thread-container" id="chat-thread-${query_id}" style="max-width: 700px; margin: 2rem auto 0 auto; background: rgba(0,255,247,0.05); border-radius: 16px; box-shadow: 0 0 8px #00fff7; padding: 1.2rem;">
+          <div class="chat-messages" id="chat-messages-${query_id}" style="min-height: 80px; margin-bottom: 1rem; font-size: 1.05em;">
+            <div style="color:#888;">Ask a follow-up question about this topic...</div>
+          </div>
+          <form class="chat-input-form" id="chat-input-form-${query_id}" autocomplete="off" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <textarea class="chat-input" id="chat-input-${query_id}" rows="1" placeholder="Ask a follow-up or chat..." style="flex: 1; border-radius: 12px; padding: 0.6rem; border: none; font-size: 1em; resize: none; background: #101e2b; color: #fff; min-height: 50px;"></textarea>
+            <button type="submit" class="chat-send-btn" style="background: #00fff7; border: none; border-radius: 50%; width: 38px; height: 38px; color: #001f2f; font-size: 1.2em; cursor: pointer; transition: background 0.18s; box-shadow: 0 2px 8px #00fff7;">&#9658;</button>
+          </form>
+        </div>
+      `;
+    }
+
+    function attachChatHandlers(query_id) {
+      const form = document.getElementById(`chat-input-form-${query_id}`);
+      const input = document.getElementById(`chat-input-${query_id}`);
+      const messagesDiv = document.getElementById(`chat-messages-${query_id}`);
+      if (!form || !input || !messagesDiv) return;
+
+      // First check if we have chat messages stored in the database entry
+      const historyItem = searchHistory.find(item => item.query_id === query_id);
+      if (historyItem && historyItem.chatMessages && historyItem.chatMessages.length > 0) {
+        // Use stored chat messages from database
+        messagesDiv.innerHTML = historyItem.chatMessages.map(msg => 
+          `<div style="${msg.role === 'user' ? 'color: #00fff7; margin-bottom: 0.2em; font-weight: 600;' : 'color: #5e9fd4; margin-bottom: 0.7em;'}">
+            <b>${msg.role === 'user' ? 'You' : 'Bot'}:</b> ${msg.role === 'bot' ? markdownToHtml(msg.text) : msg.text}
+          </div>`
+        ).join('');
+      } else {
+        // Just show a welcome message instead of trying to fetch from server
+        messagesDiv.innerHTML = `<div style="color: #5e9fd4; margin-bottom: 0.7em;">
+          <b>Bot:</b> Ask me a follow-up question about this topic!
+        </div>`;
+        
+        // Initialize chat messages array
+        if (historyItem) {
+          historyItem.chatMessages = [
+            { role: 'bot', text: 'Ask me a follow-up question about this topic!' }
+          ];
+          updateHistoryOnServer(historyItem.id, historyItem).catch(err => {
+            console.error('Error updating chat history:', err);
+          });
+        }
+      }
+
+      form.onsubmit = async function(e) {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        messagesDiv.innerHTML += `<div style="color: #00fff7; margin-bottom: 0.2em; font-weight: 600;"><b>You:</b> ${text}</div>`;
+        // Show typing indicator
+        const typingId = `typing-${Date.now()}`;
+        messagesDiv.innerHTML += `<div style="color: #5e9fd4; margin-bottom: 0.7em;" id="${typingId}"><b>Bot:</b> <span class="typing-indicator">typing...</span></div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        input.value = '';
+
+        // Use Puter.js Gemini for chat
+        try {
+          const response = await puter.ai.chat(text, {
+            model: 'google/gemini-2.0-flash-lite-001' // or any other Gemini model
+          });
+          const botText = response.message.content || "No response.";
+          const typingDiv = document.getElementById(typingId);
+          if (typingDiv) typingDiv.innerHTML = `<b>Bot:</b> ${markdownToHtml(botText)}`;
+
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          // Store this conversation in our database entry
+          const historyItem = searchHistory.find(item => item.query_id === query_id);
+          if (historyItem) {
+            if (!historyItem.chatMessages) historyItem.chatMessages = [];
+            historyItem.chatMessages.push(
+              { role: 'user', text: text },
+              { role: 'bot', text: botText }
+            );
+            updateHistoryOnServer(historyItem.id, historyItem).catch(err => {
+              console.error('Error updating chat history:', err);
+            });
+          }
+        } catch (err) {
+          const typingDiv = document.getElementById(typingId);
+          if (typingDiv) typingDiv.innerHTML = `<b>Bot:</b> Error: ${err}`;
+        }
+      };
+
+      // Auto-expand textarea as user types
+      input.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
+
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          form.dispatchEvent(new Event('submit'));
+        }
+      });
+    }
+    
+    // Helper: Get selected text within a specific container
+    let askBotBtn = null;
+
+    function removeAskBotBtn() {
+      if (askBotBtn && askBotBtn.parentNode) {
+        askBotBtn.parentNode.removeChild(askBotBtn);
+        askBotBtn = null;
+      }
+    }
+
+    // Listen for selection inside content
+    document.addEventListener('mouseup', function(e) {
+      setTimeout(() => { // Wait for selection to update
+        removeAskBotBtn();
+        const selection = window.getSelection();
+        const selectedText = selection && selection.toString().trim();
+        if (!selectedText) return;
+
+        // Only show if selection is inside a post-content or post-block
+        let anchorNode = selection.anchorNode;
+        let contentEl = anchorNode ? (anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentElement).closest('.post-content, .post-block') : null;
+        if (!contentEl) return;
+
+        // Get the bounding rect of the selection
+        let range = selection.getRangeAt(0);
+        let rect = range.getBoundingClientRect();
+
+        askBotBtn = document.createElement('button');
+        askBotBtn.textContent = 'Ask the bot';
+        askBotBtn.style.position = 'fixed';
+        askBotBtn.style.top = (rect.bottom + 8) + 'px';
+        askBotBtn.style.left = (rect.left) + 'px';
+        askBotBtn.style.zIndex = 9999;
+        askBotBtn.style.background = '#00fff7';
+        askBotBtn.style.color = '#001f2f';
+        askBotBtn.style.border = 'none';
+        askBotBtn.style.borderRadius = '16px';
+        askBotBtn.style.padding = '0.4em 1em';
+        askBotBtn.style.boxShadow = '0 2px 8px #00fff7';
+        askBotBtn.style.cursor = 'pointer';
+        askBotBtn.style.fontWeight = 'bold';
+
+        askBotBtn.onclick = function() {
+          // Find the closest result block and its query_id
+          let resultBlock = contentEl.closest('.result-block');
+          if (!resultBlock) return;
+          
+          // Find the chat input for this result
+          const chatContainer = document.querySelector('.chat-thread-container');
+          if (!chatContainer) return;
+          
+          const chatInput = chatContainer.querySelector('.chat-input');
+          if (chatInput) {
+            chatInput.value = selectedText;
+            chatInput.focus();
+            chatContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          
+          removeAskBotBtn();
+          window.getSelection().removeAllRanges();
+        };
+
+        document.body.appendChild(askBotBtn);
+      }, 0);
+    });
+
+    // Remove the button if user clicks elsewhere or presses Escape
+    document.addEventListener('mousedown', function(e) {
+      if (askBotBtn && !askBotBtn.contains(e.target)) {
+        removeAskBotBtn();
+      }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') removeAskBotBtn();
+    });
+  </script>
+
+  <!-- Scroll buttons -->
+<div id="goTopBtn" title="Go to Top" aria-label="Go to Top">
+  <span>↑</span>
+</div>
+<div id="goBottomBtn" title="Go to Bottom" aria-label="Go to Bottom">
+  <span>↓</span>
+</div>
+
+<script>
+
+
+// No need for this reference as we're not using saveToSavedCollection
+
+// Initialize scroll buttons after page load
+document.addEventListener('DOMContentLoaded', function() {
+  const goTopBtn = document.getElementById('goTopBtn');
+  const goBottomBtn = document.getElementById('goBottomBtn');
+
+  if (!goTopBtn || !goBottomBtn) {
+    console.error('Scroll buttons not found in the DOM');
+    return;
+  }
+
+  function updateScrollBtns() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    const winH = window.innerHeight;
+    const docH = document.documentElement.scrollHeight;
+    goTopBtn.style.display = scrollY > 100 ? 'flex' : 'none';
+    goBottomBtn.style.display = (scrollY + winH < docH - 100) ? 'flex' : 'none';
+  }
+
+  goTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  
+  goBottomBtn.addEventListener('click', () => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  });
+
+  window.addEventListener('scroll', updateScrollBtns);
+  window.addEventListener('resize', updateScrollBtns);
+  
+  // Initial check
+  updateScrollBtns();
+  
+  console.log('Scroll buttons initialized');
+});
+</script>
+
+<script>
+// Simple save to stacks dropdown functionality
+async function showSaveDropdown(button, keyword, summaryId) {
+  // Remove any existing dropdowns
+  document.querySelectorAll('.save-dropdown').forEach(el => el.remove());
+  
+  // Create dropdown immediately
+  const dropdown = document.createElement('div');
+  dropdown.className = 'save-dropdown';
+  dropdown.style.position = 'absolute';
+  dropdown.style.zIndex = '1000';
+  dropdown.style.background = '#0b1c26';
+  dropdown.style.border = '1px solid #00fff7';
+  dropdown.style.borderRadius = '8px';
+  dropdown.style.boxShadow = '0 4px 12px rgba(0,255,247,0.3)';
+  dropdown.style.padding = '10px';
+  dropdown.style.width = '220px';
+  
+  // Position dropdown below button
+  const rect = button.getBoundingClientRect();
+  dropdown.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+  dropdown.style.left = (rect.left + window.scrollX) + 'px';
+  
+  // Add title
+  const title = document.createElement('div');
+  title.textContent = 'Save to collection:';
+  title.style.color = '#00fff7';
+  title.style.fontWeight = 'bold';
+  title.style.marginBottom = '8px';
+  dropdown.appendChild(title);
+  
+  // Get existing collections from backend
+  let saved = {};
+  try {
+    const response = await fetch('/api/saved_queries', { method: 'GET' });
+    if (response.ok) {
+      saved = await response.json();
+    }
+  } catch (e) {
+    console.warn('Error fetching saved queries from backend');
+  }
+  
+  // Add default collection
+  const defaultBtn = document.createElement('div');
+  defaultBtn.textContent = 'Default Collection';
+  defaultBtn.style.padding = '6px 10px';
+  defaultBtn.style.margin = '2px 0';
+  defaultBtn.style.cursor = 'pointer';
+  defaultBtn.style.borderRadius = '4px';
+  defaultBtn.style.transition = 'background 0.2s';
+  defaultBtn.onmouseover = () => { defaultBtn.style.background = 'rgba(0,255,247,0.1)'; };
+  defaultBtn.onmouseout = () => { defaultBtn.style.background = 'transparent'; };
+  defaultBtn.onclick = () => {
+    dropdown.remove();
+    saveToCollection('Default Collection', keyword, summaryId, button);
+  };
+  dropdown.appendChild(defaultBtn);
+  
+  // Add existing collections (if any)
+  const collections = Object.keys(saved).filter(name => name !== 'Default Collection');
+  if (collections.length > 0) {
+    collections.forEach(name => {
+      const collBtn = document.createElement('div');
+      collBtn.textContent = name;
+      collBtn.style.padding = '6px 10px';
+      collBtn.style.margin = '2px 0';
+      collBtn.style.cursor = 'pointer';
+      collBtn.style.borderRadius = '4px';
+      collBtn.style.transition = 'background 0.2s';
+      collBtn.onmouseover = () => { collBtn.style.background = 'rgba(0,255,247,0.1)'; };
+      collBtn.onmouseout = () => { collBtn.style.background = 'transparent'; };
+      collBtn.onclick = () => {
+        dropdown.remove();
+        saveToCollection(name, keyword, summaryId, button);
+      };
+      dropdown.appendChild(collBtn);
+    });
+  }
+  
+  // Add separator
+  const separator = document.createElement('hr');
+  separator.style.margin = '8px 0';
+  separator.style.border = 'none';
+  separator.style.borderTop = '1px solid rgba(0,255,247,0.3)';
+  dropdown.appendChild(separator);
+  
+  // Add new collection input
+  const inputContainer = document.createElement('div');
+  inputContainer.style.display = 'flex';
+  inputContainer.style.marginBottom = '8px';
+  
+  const input = document.createElement('input');
+  input.placeholder = 'New collection name';
+  input.style.flex = '1';
+  input.style.padding = '6px';
+  input.style.border = '1px solid #00fff7';
+  input.style.borderRadius = '4px';
+  input.style.background = '#000';
+  input.style.color = '#fff';
+  inputContainer.appendChild(input);
+  
+  dropdown.appendChild(inputContainer);
+  
+  // Add create button
+  const createBtn = document.createElement('button');
+  createBtn.textContent = 'Create & Save';
+  createBtn.style.width = '100%';
+  createBtn.style.padding = '8px';
+  createBtn.style.background = '#00fff7';
+  createBtn.style.color = '#001f2f';
+  createBtn.style.border = 'none';
+  createBtn.style.borderRadius = '4px';
+  createBtn.style.cursor = 'pointer';
+  createBtn.style.fontWeight = 'bold';
+  createBtn.onclick = () => {
+    const name = input.value.trim();
+    if (name) {
+      dropdown.remove();
+      saveToCollection(name, keyword, summaryId, button);
+    }
+  };
+  dropdown.appendChild(createBtn);
+  
+  // Add to document immediately
+  document.body.appendChild(dropdown);
+  
+  // Focus input immediately
+  input.focus();
+  
+  // Close when clicking outside
+  document.addEventListener('click', function closeDropdown(e) {
+    if (!dropdown.contains(e.target) && e.target !== button) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown);
+    }
+  });
+}
+
+function saveToCollection(collectionName, keyword, summaryId, button) {
+  const content = document.getElementById(summaryId).innerHTML;
+  const sources = document.getElementById('sourceSection') ? document.getElementById('sourceSection').innerHTML : '';
+  
+  // Call the saveToStacks function with the collection name
+  saveToStacks(keyword, content, button, sources, collectionName);
+}
+</script>
+
+
+</body>
+</html>

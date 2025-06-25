@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --side-nav-width: 80px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #0b0c10;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--side-nav-width);
+            height: 100vh;
+            background-color: #0b1c26;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 1.2rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+        }
+
+        .side-nav a {
+            text-align: center;
+            color: #b0faff;
+            font-size: 0.7rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .side-nav a:hover {
+            color: #00fff7;
+            transform: scale(1.05);
+        }
+
+        .side-nav img {
+            width: 20px;
+            height: 20px;
+            filter: brightness(0) invert(1);
+        }
+
+        .cloud-container {
+            margin-left: var(--side-nav-width);
+            padding: 2rem;
+            height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .cloud-header {
+            margin-bottom: 2rem;
+        }
+
+        .cloud-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00fff7;
+            margin-bottom: 1rem;
+        }
+
+        .cloud-subtitle {
+            font-size: 1.1rem;
+            color: #b0faff;
+            opacity: 0.8;
+        }
+
+        .search-container {
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1.5px solid #1a2a36;
+            background: rgba(18, 22, 28, 0.98);
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-button {
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(90deg,#00fff7,#5e9fd4);
+            color: #001f2f;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,255,247,0.3);
+        }
+
+        .cloud-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cloud-card {
+            background: rgba(18, 22, 28, 0.98);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 32px 0 rgba(0,255,247,0.10);
+            border: 1.5px solid #1a2a36;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #00fff7;
+            margin-bottom: 1rem;
+        }
+
+        .card-content {
+            color: #b0faff;
+            opacity: 0.9;
+        }
+
+        .word-cloud {
+            width: 100%;
+            height: 400px;
+            background: rgba(18, 22, 28, 0.98);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 32px 0 rgba(0,255,247,0.10);
+            border: 1.5px solid #1a2a36;
+            margin-bottom: 2rem;
+        }
+
+        .results-container {
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: rgba(18, 22, 28, 0.98);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1.5px solid #1a2a36;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #00fff7;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-content {
+            color: #b0faff;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .result-meta {
+            font-size: 0.9rem;
+            color: #b0faff;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .cloud-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cloud-container {
+                padding: 1rem;
+            }
+
+            .cloud-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="side-nav">
+        <a href="{{ url_for('home') }}" title="Home" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/home.png" alt="Home"/>
+            <span>Home</span>
+        </a>
+
+        <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+            <span>RadarGPT</span>
+        </a>
+
+        <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+            <span>Verticals</span>
+        </a>
+
+        <a href="/pain-cloud-combined" title="Pain-cloud">
+            <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Insights"/>
+            <span>Insights</span>
+        </a>
+
+        <a href="/saved" title="Saved">
+            <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Saved"/>
+            <span>Saved</span>
+        </a>
+
+        <a href="/teams" title="Teams" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/collaboration.png" alt="Teams"/>
+            <span>Teams</span>
+        </a>
+
+        <a href="/integrations" title="Integrations" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/link.png" alt="Integrations"/>
+            <span>Integrate</span>
+        </a>
+    </div>
+
+    <div class="cloud-container">
+        <div class="cloud-header">
+            <h1 class="cloud-title">Pain Cloud</h1>
+            <p class="cloud-subtitle">Visualize and analyze pain points from various sources</p>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Enter keyword to search for pain points...">
+            <button class="search-button" onclick="searchPainPoints()">Search</button>
+        </div>
+
+        <div class="word-cloud" id="wordCloud">
+            <!-- Word cloud will be rendered here -->
+        </div>
+
+        <div class="cloud-grid">
+            <div class="cloud-card">
+                <h2 class="card-title">Total Sources</h2>
+                <div class="card-content" id="totalSources">Loading...</div>
+            </div>
+
+            <div class="cloud-card">
+                <h2 class="card-title">Top Pain Points</h2>
+                <div class="card-content" id="topPainPoints">Loading...</div>
+            </div>
+
+            <div class="cloud-card">
+                <h2 class="card-title">Trend Analysis</h2>
+                <div class="card-content" id="trendAnalysis">Loading...</div>
+            </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        function searchPainPoints() {
+            const keyword = document.getElementById('searchInput').value;
+            if (!keyword) return;
+
+            // Show loading state
+            document.getElementById('resultsContainer').innerHTML = '<div class="result-card">Searching...</div>';
+
+            // Make API call to pain-cloud endpoint
+            fetch('/pain-cloud', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keyword: keyword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update metrics
+                updateMetrics(data);
+
+                // Generate word cloud
+                generateWordCloud(data);
+
+                // Display results
+                displayResults(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('resultsContainer').innerHTML = 
+                    '<div class="result-card">Error occurred while searching. Please try again.</div>';
+            });
+        }
+
+        function updateMetrics(data) {
+            // Update total sources
+            const sources = new Set(data.posts.map(post => post.subreddit || 'Unknown'));
+            document.getElementById('totalSources').textContent = 
+                `${sources.size} unique sources`;
+
+            // Update top pain points
+            const painPoints = data.pain_points.map(point => {
+                const severity = point.analysis.match(/Severity:\s*(\d+)/)?.[1] || '0';
+                return {
+                    text: point.analysis.split('\n')[0],
+                    severity: parseInt(severity)
+                };
+            }).sort((a, b) => b.severity - a.severity)
+              .slice(0, 3)
+              .map(point => `${point.text} (Severity: ${point.severity})`)
+              .join('<br>');
+            document.getElementById('topPainPoints').innerHTML = painPoints;
+
+            // Update trend analysis
+            const dates = data.posts.map(post => new Date(post.created));
+            const recentCount = dates.filter(date => 
+                date > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            ).length;
+            document.getElementById('trendAnalysis').innerHTML = 
+                `${recentCount} pain points in the last 7 days<br>` +
+                `${data.posts.length - recentCount} pain points older`;
+        }
+
+        function generateWordCloud(data) {
+            // Extract words from pain points
+            const words = data.pain_points.flatMap(point => 
+                point.analysis.toLowerCase()
+                    .replace(/[^\w\s]/g, '')
+                    .split(/\s+/)
+                    .filter(word => word.length > 3)
+            );
+
+            // Count word frequencies
+            const wordCounts = words.reduce((acc, word) => {
+                acc[word] = (acc[word] || 0) + 1;
+                return acc;
+            }, {});
+
+            // Convert to array of objects
+            const wordData = Object.entries(wordCounts)
+                .map(([text, size]) => ({ text, size }))
+                .sort((a, b) => b.size - a.size)
+                .slice(0, 50);
+
+            // Clear previous word cloud
+            d3.select("#wordCloud").selectAll("*").remove();
+
+            // Set up dimensions
+            const width = document.getElementById('wordCloud').clientWidth;
+            const height = 400;
+
+            // Create SVG
+            const svg = d3.select("#wordCloud")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Create word cloud layout
+            const layout = d3.layout.cloud()
+                .size([width, height])
+                .words(wordData)
+                .padding(5)
+                .rotate(() => ~~(Math.random() * 2) * 90)
+                .font("Montserrat")
+                .fontSize(d => d.size * 2)
+                .on("end", draw);
+
+            layout.start();
+
+            function draw(words) {
+                svg.append("g")
+                    .attr("transform", `translate(${width/2},${height/2})`)
+                    .selectAll("text")
+                    .data(words)
+                    .enter().append("text")
+                    .style("font-size", d => `${d.size}px`)
+                    .style("font-family", "Montserrat")
+                    .style("fill", () => d3.interpolateRainbow(Math.random()))
+                    .attr("text-anchor", "middle")
+                    .attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`)
+                    .text(d => d.text);
+            }
+        }
+
+        function displayResults(data) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+
+            data.pain_points.forEach(point => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                const title = document.createElement('h3');
+                title.className = 'result-title';
+                title.textContent = point.post.title;
+                
+                const content = document.createElement('div');
+                content.className = 'result-content';
+                content.textContent = point.analysis;
+                
+                const meta = document.createElement('div');
+                meta.className = 'result-meta';
+                meta.textContent = `Source: ${point.post.subreddit || 'Unknown'} | Score: ${point.post.score}`;
+                
+                card.appendChild(title);
+                card.appendChild(content);
+                card.appendChild(meta);
+                container.appendChild(card);
+            });
+
+            if (data.pain_points.length === 0) {
+                container.innerHTML = '<div class="result-card">No pain points found for this keyword.</div>';
+            }
+        }
+
+        // Initialize with empty state
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('totalSources').textContent = '0 sources';
+            document.getElementById('topPainPoints').textContent = 'No data available';
+            document.getElementById('trendAnalysis').textContent = 'No data available';
+        });
+    </script>
+</body>
+</html>

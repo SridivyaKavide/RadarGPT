@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PainRadar — AI Insight Engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <style>
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: #000; color: white; font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
+    #particles-js { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; }
+    #neural-nodes { position: fixed; top: 0; left: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+    .side-nav { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 80px; 
+      height: 100vh; 
+      background-color: #0b1c26; 
+      z-index: 20; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      padding: 1rem 0; 
+      gap: 1.2rem; 
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6); 
+    }
+    .side-nav a { 
+      text-align: center; 
+      color: #b0faff; 
+      font-size: 0.7rem; 
+      text-decoration: none; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      gap: 5px; 
+      transition: all 0.3s ease; 
+    }
+    .side-nav a:hover { color: #00fff7; transform: scale(1.05); }
+    .side-nav img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+    /* UPDATED HEADER STYLE */
+    header {
+      position: fixed;
+      top: 0;
+      left: 80px; /* Push right of sidebar */
+      height: 50px;
+      width: calc(100% - 80px);
+      background: #0b1c26;
+      z-index: 30; /* Above sidebar */
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+    }
+    header nav {
+      width: 100%;
+      display: flex;
+      gap: 1.5rem;
+    }
+    header nav a {
+      color: #b0faff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    header nav a:hover {
+      background-color: #00fff7;
+      color: #000;
+    }
+
+    .container { 
+      position: relative; 
+      z-index: 10; 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
+      text-align: center; 
+      padding-left: 80px; 
+      user-select: none; 
+      padding-top: 50px; /* To avoid being under header */
+    }
+    h2 { font-size: 1rem; color: #b0faff; margin-bottom: 1rem; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { font-size: 4rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(90deg, #00fff7, #5e9fd4, #00fff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
+    .scroll-circle { margin-top: 3rem; width: 70px; height: 70px; border: 2px solid white; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(0,255,255,0.2), transparent); box-shadow: 0 0 15px rgba(0, 255, 255, 0.4); animation: bounce 2s infinite; cursor: pointer; }
+    .arrow-icon { animation: arrow-pulse 1.5s infinite ease-in-out; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+    @keyframes arrow-pulse { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(6px); opacity: 0.6; } }
+    footer { position: absolute; bottom: 1.5rem; left: 80px; width: calc(100% - 80px); display: flex; justify-content: center; font-size: 0.9rem; color: #ccc; z-index: 10; user-select: none; }
+    footer a { color: #ccc; margin-left: 1rem; text-decoration: none; }
+    footer a:hover { text-decoration: underline; color: #fff; }
+    @media (max-width: 600px) {
+      .container { padding-left: 0; padding-top: 50px; }
+      .side-nav { width: 60px; }
+      .side-nav a { font-size: 0.1rem; }
+      header { left: 60px; width: calc(100% - 60px); }
+      footer { left: 60px; width: calc(100% - 60px); }
+    }
+  </style>
+  
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <nav>
+ 
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+  </nav>
+</header>
+
+<!-- Particle Background -->
+<div id="particles-js"></div>
+
+<!-- Neural Nodes Layer -->
+<canvas id="neural-nodes"></canvas>
+
+<!-- Sidebar Navigation -->
+<div class="side-nav">
+  <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+    <span>RadarGPT</span>
+  </a><br>
+
+  <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+    <span>Verticals</span>
+  </a><br>
+
+  <a href="/pain-cloud-combined" title="Pain-cloud">
+    <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+    <span>Insights</span>
+  </a><br>
+
+  <a href="/live-trends" title="Live Trends" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/news.png" alt="Live Trends"/>
+    <span>Trends</span>
+  </a><br>
+
+  <a href="/saved" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+    <span>Saved</span>
+  </a><br>
+
+  <a href="/pricing" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/price-tag.png" alt="Account"/>
+    <span>Pricing</span>
+  </a><br>
+  
+  
+</div>
+
+<!-- Main Content -->
+<div class="container">
+  <h1>RADAR AI</h1>
+  <h2>See the Trouble, Burst the Bubble</h2>
+  <div class="scroll-circle">
+    <svg class="arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none">
+      <path d="M5 12h14M13 5l7 7-7 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <a href="mailto:info@painradar.ai">Contact Us</a>
+</footer>
+
+<!-- Login Prompt Modal -->
+<div id="loginModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:100; justify-content:center; align-items:center;">
+  <div style="position: relative; background:#0b1c26; padding:2rem; border-radius:10px; text-align:center; box-shadow:0 0 15px rgba(0,255,247,0.3); max-width:90%; width:300px;">
+    <span id="closeModal" style="position:absolute; top:10px; right:15px; font-size:24px; color:#00fff7; cursor:pointer;">&times;</span>
+    <h2 style="color:#00fff7; margin-bottom:1rem;">Login Required</h2>
+    <p style="color:#ccc; margin-bottom:1.5rem;">Please login to save your progress and access this feature.</p>
+    <a href="{{ url_for('login') }}" style="display:inline-block; padding:0.6rem 1.2rem; background:#00fff7; color:#000; text-decoration:none; font-weight:bold; border-radius:5px;">Login</a>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script>
+  // Particle.js
+  particlesJS("particles-js", {
+    particles: {
+      number: { value: 60, density: { enable: true, value_area: 800 } },
+      color: { value: "#00fff7" },
+      shape: { type: "circle" },
+      opacity: {
+        value: 0.5,
+        random: true,
+        anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false }
+      },
+      size: { value: 4, random: true },
+      line_linked: {
+        enable: true,
+        distance: 150,
+        color: "#00fff7",
+        opacity: 0.4,
+        width: 1
+      },
+      move: { enable: true, speed: 2, random: true, out_mode: "out" }
+    },
+    interactivity: {
+      detect_on: "canvas",
+      events: {
+        onhover: { enable: true, mode: "grab" },
+        onclick: { enable: true, mode: "push" },
+        resize: true
+      },
+      modes: {
+        grab: { distance: 180, line_linked: { opacity: 0.6 } },
+        push: { particles_nb: 4 }
+      }
+    },
+    retina_detect: true
+  });
+
+  // Neural Nodes
+  const canvas = document.getElementById("neural-nodes");
+  const ctx = canvas.getContext("2d");
+  let width, height;
+  let points = [];
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initPoints();
+  }
+
+  function initPoints() {
+    points = [];
+    for (let i = 0; i < 40; i++) {
+      points.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > width) p.vx *= -1;
+      if (p.y < 0 || p.y > height) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#00fff7';
+      ctx.fill();
+
+      for (let j = i + 1; j < points.length; j++) {
+        const q = points[j];
+        const dx = p.x - q.x;
+        const dy = p.y - q.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 150) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = `rgba(0, 255, 247, ${1 - dist / 150})`;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  draw();
+</script>
+
+<!-- Login Modal JS -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+    const modal = document.getElementById("loginModal");
+    const closeModal = document.getElementById("closeModal");
+
+    document.querySelectorAll(".auth-link").forEach(link => {
+      link.addEventListener("click", function (e) {
+        if (!isAuthenticated) {
+          e.preventDefault();
+          modal.style.display = "flex";
+        }
+      });
+    });
+
+    window.addEventListener("click", function (e) {
+      if (e.target === modal) modal.style.display = "none";
+    });
+
+    if (closeModal) {
+      closeModal.addEventListener("click", function () {
+        modal.style.display = "none";
+      });
+    }
+  });
+</script>
+
+</body>
+</html>

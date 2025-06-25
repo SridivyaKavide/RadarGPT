@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Cloud Combined</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+
+
+:root {
+      --side-nav-width: 80px;
+    }
+
+        body { background: #000; color: #fff; font-family: 'Poppins', 'Montserrat', sans-serif; }
+        .container { max-width: 1100px; margin: 40px auto; background: rgba(0,255,247,0.07); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,255,247,0.08); padding: 32px; }
+        h1 { color: #00fff7; text-align: center; margin-bottom: 30px; }
+        .form-row { display: flex; gap: 16px; margin-bottom: 32px; justify-content: center; }
+        select, input { padding: 10px 16px; border-radius: 12px; border: 1.5px solid #00fff7; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; }
+        button { background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; font-weight: 700; border: none; border-radius: 14px; padding: 0.6em 1.2em; box-shadow: 0 2px 12px rgba(0,255,247,0.12); transition: background 0.18s, color 0.18s, box-shadow 0.18s; }
+        button:hover { background: linear-gradient(90deg,#5e9fd4,#00fff7); color: #001f2f; box-shadow: 0 6px 18px #00fff7; }
+        .cloud-section { margin-top: 40px; }
+        .cloud-title { color: #5e9fd4; font-size: 1.3rem; margin-bottom: 18px; }
+        .keyword-cloud { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+        .keyword { background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; border-radius: 20px; padding: 8px 18px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(0,255,247,0.08); }
+        .complaint-list { margin-bottom: 24px; }
+        .complaint-item { background: rgba(0,255,247,0.09); border: 1.5px solid rgba(0,255,247,0.18); border-radius: 14px; padding: 16px; margin-bottom: 12px; color: #fff; }
+        .theme-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .theme-item { background: #5e9fd4; color: #fff; border-radius: 12px; padding: 8px 16px; font-weight: 600; }
+        .rank-badge { background: #ff6b6b; color: #fff; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; }
+
+.side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.7rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+
+header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 80px; /* Leaves space for left sidebar */
+  height: 50px;
+  background: #0b1c26;
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end; /* Push content to the right */
+  align-items: center;
+  padding: 0 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+}
+
+header nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+header nav a {
+  color: #b0faff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header nav a:hover {
+  background-color: #00fff7;
+  color: #000;
+}
+
+
+    </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+  </nav>
+</header>
+
+<div class="side-nav">
+    <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+      <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+      <span>RadarGPT</span>
+    </a><br>
+  
+    <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+      <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+      <span>Verticals</span>
+    </a><br>
+  
+    <a href="/pain-cloud-combined" title="Pain-cloud">
+      <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+      <span>Insights</span>
+    </a><br>
+  
+    <a href="/live-trends" title="Live Trends" class="auth-link">
+      <img src="https://img.icons8.com/ios-filled/50/news.png" alt="Live Trends"/>
+      <span>Trends</span>
+    </a><br>
+  
+    <a href="/saved" title="Saved">
+      <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+      <span>Saved</span>
+    </a><br>
+
+    <a href="/pricing" title="Saved">
+        <img src="https://img.icons8.com/ios-filled/50/money.png" alt="Account"/>
+        <span>Pricing</span>
+      </a><br>
+    
+    
+  </div>
+    <div class="container">
+        <h1>Pain Cloud Explorer</h1>
+        <div class="form-row">
+            <select id="personaSelect" required>
+                <option value="">Select Persona / Job Role</option>
+                <option value="Product Manager">Product Manager</option>
+                <option value="Software Engineer">Software Engineer</option>
+                <option value="Sales">Sales</option>
+                <option value="Customer Support">Customer Support</option>
+                <option value="Founder">Founder</option>
+                 <option value="Designer">Designer</option>
+                <option value="Frontend Developer">Frontend Developer</option>
+                <option value="Data Scientist">Data Scientist</option>
+                <option value="DevOps Engineer">DevOps Engineer</option>
+                <option value="QA Engineer">QA Engineer</option>
+                <option value="Marketer">Marketer</option>
+                <option value="Support Manager">Founder</option>
+                 <option value="Salesperson">Salesperson</option>
+            
+            </select>
+            <select id="industrySelect" required>
+                <option value="">Select Industry</option>
+                <option value="SaaS">SaaS</option>
+                <option value="Fintech">Fintech</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="E-Commerce">E-Commerce</option>
+                <option value="EdTech">EdTech</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Logistics">Logistics</option>
+                <option value="Real Estate">Real-estate</option>
+            </select>
+            <select id="modeSelect" required>
+                <option value="Snap">Snap</option>
+                <option value="Probe">Probe</option>
+            </select>
+            <button id="showCloudBtn"><i class="bi bi-cloud"></i> Show Pain Cloud</button>
+        </div>
+        <div id="loading" style="display:none;text-align:center;margin:30px 0;color:#00fff7;">Generating pain cloud...</div>
+        <div id="cloudResults" class="cloud-section" style="display:none;"></div>
+        <div id="deepResults" class="cloud-section" style="display:none;"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.getElementById('showCloudBtn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            const persona = document.getElementById('personaSelect').value;
+            const industry = document.getElementById('industrySelect').value;
+            const mode = document.getElementById('modeSelect').value;
+            if (!persona || !industry) return;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('cloudResults').style.display = 'none';
+            document.getElementById('deepResults').style.display = 'none';
+            document.getElementById('cloudResults').innerHTML = '';
+            document.getElementById('deepResults').innerHTML = '';
+            if (mode === 'quick' || mode === 'Snap') {
+    try {
+        const res = await fetch('/pain-cloud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ persona, industry })
+        });
+        const data = await res.json();
+        document.getElementById('loading').style.display = 'none';
+        if (data.error) {
+            document.getElementById('cloudResults').innerHTML = `<div style='color:#ff6b6b;'>${data.error}</div>`;
+            document.getElementById('cloudResults').style.display = 'block';
+            return;
+        }
+        // Render pain cloud (quick mode) - MATCHES pain_cloud.html
+        let html = '';
+        html += `<div class='cloud-title'><i class='bi bi-exclamation-triangle'></i> Top Complaints</div>`;
+        html += `<div class='complaint-list'>`;
+        data.complaints.forEach((c, i) => {
+            html += `<div class='complaint-item'><span class='rank-badge'>${i+1}</span> ${c.text} <span style='color:#ffd54f;font-weight:600;'>[Severity: ${c.severity}]</span></div>`;
+        });
+        html += `</div>`;
+        html += `<div class='cloud-title'><i class='bi bi-cloud'></i> Repeated Keywords</div>`;
+        html += `<div class='keyword-cloud'>`;
+        data.keywords.forEach(k => {
+            html += `<span class='keyword'>${k.word} <span style='font-size:0.9em;color:#ffca28;'>(${k.count})</span></span>`;
+        });
+        html += `</div>`;
+        html += `<div class='cloud-title'><i class='bi bi-lightbulb'></i> Auto-Generated Startup Themes</div>`;
+        html += `<div class='theme-list'>`;
+        data.themes.forEach(t => {
+            html += `<span class='theme-item'>${t}</span>`;
+        });
+        html += `</div>`;
+        document.getElementById('cloudResults').innerHTML = html;
+        document.getElementById('cloudResults').style.display = 'block';
+    } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('cloudResults').innerHTML = `<div style='color:#ff6b6b;'>Error generating pain cloud.</div>`;
+        document.getElementById('cloudResults').style.display = 'block';
+    }
+} else {
+                // Deep mode: load pain_cloud_realtime.html logic via fetch and inject
+                try {
+                    const response = await fetch('/pain-cloud-realtime', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            persona: persona,
+                            industry: industry,
+                            mode: 'real'
+                        })
+                    });
+                    const data = await response.json();
+                    document.getElementById('loading').style.display = 'none';
+                    if (data.error) {
+                        document.getElementById('deepResults').innerHTML = `<div style='color:#ff6b6b;'>${data.error}</div>`;
+                        document.getElementById('deepResults').style.display = 'block';
+                        return;
+                    }
+                    // Render deep mode (reuse displayRealData logic from pain_cloud_realtime.html)
+                    let html = '';
+                    // Trending keywords section (if present)
+                    if (data.trending_keywords && data.trending_keywords.length > 0) {
+                        html += `<div class='cloud-title'><i class='bi bi-cloud'></i> Trending Keywords</div>`;
+                        html += `<div class='keyword-cloud'>`;
+                        data.trending_keywords.forEach(k => {
+                            html += `<span class='keyword'>${k}</span>`;
+                        });
+                        html += `</div>`;
+                    }
+                    if (data.pain_points && data.pain_points.length > 0) {
+                        let shown = 0;
+                        data.pain_points.slice(0, 30).forEach((point, index) => {
+                            // Only show real points (not fallback)
+                            const isFallback = (point.reason && point.reason.trim().toLowerCase().includes('fallback: complaint matched keyword list'));
+                            if (isFallback) return;
+                            const persona = point.persona || 'Unknown';
+                            const tag = point.trend_label || point.tag || '—';
+                            const trendDirection = point.trend_direction || '—';
+                            const keywords = point.keywords || [];
+                            const sparkline = point.sparkline_data || [];
+                            const insight = point.sparkline_insight || '—';
+                            const keywordHTML = keywords.map(k => `
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                                    ${k.word} (${k.score || '—'}/10)
+                                </span>
+                            `).join('');
+                            const tagColors = {
+                                'VC-worthy wedge': 'bg-red-600',
+                                'Feature, not a product': 'bg-yellow-600',
+                                'False signal': 'bg-gray-400',
+                                'Monitor closely': 'bg-blue-600',
+                                'Sleeping pain, not burning': 'bg-purple-600',
+                                'Quick Fix': 'bg-green-500',
+                                'VC-worthy': 'bg-red-500',
+                            };
+                            const tagClass = tagColors[tag] || 'bg-gray-500';
+                            html += `
+                                <div class="relative p-5 bg-white shadow-md rounded-2xl border border-gray-200 mb-6">
+                                    <div class="absolute top-3 right-3">
+                                        <span class="text-xs font-semibold bg-gray-200 text-gray-800 px-2 py-1 rounded-full">
+                                            👤 ${persona}
+                                        </span>
+                                    </div>
+                                    <div class="text-xl font-bold text-indigo-700 mb-2">
+                                        ${point.summary || point.title || 'No summary available'}
+                                    </div>
+                                    <div class="flex flex-wrap items-center text-sm text-gray-600 mb-3 gap-2">
+                                        <span><b>🔥 Severity:</b> ${point.severity || '—'}/10</span>
+                                        <span><b>📈 Trend:</b> ${point.trend || '—'}</span>
+                                        <span class="px-2 py-1 rounded-full text-white text-xs font-bold ${tagClass}">
+                                            ${tag}
+                                        </span>
+                                    </div>
+                                    <div class="mb-2 text-gray-800">
+                                        <b>🧠 Why it matters:</b> ${point.reason || '—'}
+                                    </div>
+                                    <div class="mb-2 text-gray-800">
+                                        <b>❗ Reason (Pain/Urgency):</b> ${point.reason || '—'}
+                                    </div>
+                                    <div class="mb-2 text-gray-800">
+                                        <b>📉 Market Gap:</b> ${point.market_gap || '—'}
+                                    </div>
+                                    ${point.excerpt ? `
+                                    <div class="mb-3 text-gray-700 bg-gray-50 border-l-4 border-red-400 pl-3 py-2 italic">
+                                        <b>Excerpt:</b> "${point.excerpt}"
+                                    </div>` : ''}
+                                    <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                                        <div><b>💬 Title:</b> ${point.title || '—'}</div>
+                                        <div><b>📍 Subreddit:</b> ${point.source || '—'}</div>
+                                        <div><b>⬆️ Upvotes:</b> ${point.upvotes !== undefined ? point.upvotes : '—'}</div>
+                                        <div><b>🕒 Posted:</b> ${point.timestamp || '—'}</div>
+                                    </div>
+                                    ${keywordHTML ? `
+                                    <div class="mb-3">
+                                        <b>🔑 Pain Keywords:</b>
+                                        <div class="flex flex-wrap mt-1 gap-2">${keywordHTML}</div>
+                                    </div>` : ''}
+                                    <div class="mb-3">
+                                        <b class="block text-sm text-gray-800 mb-1">📊 Trend Insight:</b>
+                                        <pre style="background:#f3f4f6;border-radius:8px;padding:14px 18px;font-family:monospace,Menlo,Consolas,monospace;font-size:1em;white-space:pre-wrap;color:#222;line-height:1.6;">${insight}</pre>
+                                    </div>
+                                    ${point.url ? `
+                                    <div class="mt-3">
+                                        <a href="${point.url}" target="_blank"
+                                            class="inline-block px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition">
+                                            🔗 View Reddit Post
+                                        </a>
+                                    </div>` : ''}
+                                </div>
+                            `;
+                            shown++;
+                        });
+                        if (shown < 5) {
+                            html = '<p class="text-red-400 font-bold mb-4">Not enough real pain points found. Try again later.</p>' + html;
+                        }
+                        if (shown === 0) {
+                            html += '<p class="text-gray-500">No real pain points found. Try again later.</p>';
+                        }
+                    } else {
+                        html = '<p class="text-gray-500">No complaints found</p>';
+                    }
+                    document.getElementById('deepResults').innerHTML = html;
+                    document.getElementById('deepResults').style.display = 'block';
+                } catch (err) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('deepResults').innerHTML = `<div style='color:#ff6b6b;'>Error generating deep pain cloud.</div>`;
+                    document.getElementById('deepResults').style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

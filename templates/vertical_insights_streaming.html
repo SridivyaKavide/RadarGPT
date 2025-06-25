@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertical Insights - RadarGPT</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .streaming-text {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-radar mr-2"></i>RadarGPT
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/app" class="text-gray-600 hover:text-gray-900">Dashboard</a>
+                    <a href="/analytics" class="text-gray-600 hover:text-gray-900">Analytics</a>
+                    <a href="/logout" class="text-gray-600 hover:text-gray-900">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-chart-line mr-3 text-blue-600"></i>
+                Vertical Insights
+            </h1>
+            <p class="text-xl text-gray-600">Get AI-powered insights for specific industry verticals</p>
+        </div>
+
+        <!-- Vertical Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('saas')">
+                <div class="flex items-center">
+                    <i class="fas fa-cloud text-3xl text-blue-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">SaaS</h3>
+                        <p class="text-gray-600">Software as a Service</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('fintech')">
+                <div class="flex items-center">
+                    <i class="fas fa-credit-card text-3xl text-green-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Fintech</h3>
+                        <p class="text-gray-600">Financial Technology</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('healthcare')">
+                <div class="flex items-center">
+                    <i class="fas fa-heartbeat text-3xl text-red-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Healthcare</h3>
+                        <p class="text-gray-600">Health Technology</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('ecommerce')">
+                <div class="flex items-center">
+                    <i class="fas fa-shopping-cart text-3xl text-purple-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">E-Commerce</h3>
+                        <p class="text-gray-600">Online Retail</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('edtech')">
+                <div class="flex items-center">
+                    <i class="fas fa-graduation-cap text-3xl text-yellow-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">EdTech</h3>
+                        <p class="text-gray-600">Education Technology</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6 card-hover cursor-pointer" onclick="selectVertical('gaming')">
+                <div class="flex items-center">
+                    <i class="fas fa-gamepad text-3xl text-indigo-500 mr-4"></i>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Gaming</h3>
+                        <p class="text-gray-600">Game Development</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Input -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8" id="querySection" style="display: none;">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-search mr-2 text-blue-600"></i>
+                Ask about <span id="selectedVerticalName" class="text-blue-600"></span>
+            </h2>
+            <div class="flex space-x-4">
+                <input type="text" id="queryInput" placeholder="e.g., customer retention, pricing strategies, user onboarding..." 
+                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <button onclick="analyzeVertical()" id="analyzeBtn" 
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    <i class="fas fa-magic mr-2"></i>Analyze
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+            <!-- Loading State -->
+            <div id="loadingState" class="bg-white rounded-lg shadow-md p-8 text-center">
+                <div class="typing-indicator mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Analyzing your query...</h3>
+                <p class="text-gray-600">This should take just a few seconds</p>
+            </div>
+
+            <!-- Streaming Results -->
+            <div id="streamingResults" class="bg-white rounded-lg shadow-md p-6 mb-6" style="display: none;">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stream mr-2 text-green-600"></i>
+                    Live Analysis
+                </h3>
+                <div id="streamingContent" class="bg-gray-50 rounded-lg p-4 min-h-[200px] streaming-text text-gray-800"></div>
+            </div>
+
+            <!-- Structured Results -->
+            <div id="structuredResults" class="grid grid-cols-1 lg:grid-cols-2 gap-6" style="display: none;">
+                <!-- Pain Points -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-exclamation-triangle mr-2 text-red-500"></i>
+                        Pain Points
+                    </h3>
+                    <div id="painPoints" class="space-y-3"></div>
+                </div>
+
+                <!-- Opportunities -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                        Opportunities
+                    </h3>
+                    <div id="opportunities" class="space-y-3"></div>
+                </div>
+
+                <!-- Context -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                        Market Context
+                    </h3>
+                    <div id="context" class="space-y-3"></div>
+                </div>
+
+                <!-- Metrics -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                        <i class="fas fa-chart-bar mr-2 text-green-500"></i>
+                        Key Metrics
+                    </h3>
+                    <div id="metrics" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div id="chatSection" class="bg-white rounded-lg shadow-md p-6 mt-6" style="display: none;">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-comments mr-2 text-purple-500"></i>
+                    Ask Follow-up Questions
+                </h3>
+                <div id="chatHistory" class="bg-gray-50 rounded-lg p-4 mb-4 min-h-[200px] max-h-[400px] overflow-y-auto"></div>
+                <div class="flex space-x-4">
+                    <input type="text" id="chatInput" placeholder="Ask a follow-up question..." 
+                           class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <button onclick="sendChatMessage()" id="chatBtn" 
+                            class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedVertical = '';
+        let currentQuery = '';
+        let chatContext = '';
+
+        function selectVertical(vertical) {
+            selectedVertical = vertical;
+            const verticalNames = {
+                'saas': 'SaaS',
+                'fintech': 'Fintech', 
+                'healthcare': 'Healthcare',
+                'ecommerce': 'E-Commerce',
+                'edtech': 'EdTech',
+                'gaming': 'Gaming'
+            };
+            document.getElementById('selectedVerticalName').textContent = verticalNames[vertical];
+            document.getElementById('querySection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        async function analyzeVertical() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            currentQuery = query;
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('streamingResults').style.display = 'none';
+            document.getElementById('structuredResults').style.display = 'none';
+            document.getElementById('chatSection').style.display = 'none';
+
+            // Start streaming
+            try {
+                const response = await fetch(`/analyze-stream/${selectedVertical}/${encodeURIComponent(query)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('streamingResults').style.display = 'block';
+                const streamingContent = document.getElementById('streamingContent');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    fullResponse += chunk;
+                    streamingContent.textContent = fullResponse;
+                    streamingContent.scrollTop = streamingContent.scrollHeight;
+                }
+
+                // Try to parse the response as JSON
+                try {
+                    const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        displayStructuredResults(parsed);
+                        chatContext = fullResponse;
+                    }
+                } catch (e) {
+                    console.log('Could not parse as JSON, showing as text');
+                }
+
+                document.getElementById('chatSection').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingState').innerHTML = `
+                    <div class="text-red-600">
+                        <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                        <h3 class="text-lg font-semibold">Error occurred</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayStructuredResults(data) {
+            document.getElementById('structuredResults').style.display = 'grid';
+
+            // Display pain points
+            const painPointsDiv = document.getElementById('painPoints');
+            painPointsDiv.innerHTML = '';
+            if (data.pain_points && data.pain_points.length > 0) {
+                data.pain_points.forEach(point => {
+                    const severity = point.severity || 5;
+                    const severityColor = severity >= 8 ? 'text-red-600' : severity >= 6 ? 'text-orange-600' : 'text-yellow-600';
+                    painPointsDiv.innerHTML += `
+                        <div class="border-l-4 border-red-500 pl-4 py-2 fade-in">
+                            <h4 class="font-semibold text-gray-900">${point.title}</h4>
+                            <p class="text-gray-600 text-sm mb-2">${point.description}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs ${severityColor} font-semibold">Severity: ${severity}/10</span>
+                                <span class="text-xs text-gray-500">${point.user_segments ? point.user_segments.join(', ') : ''}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Display opportunities
+            const opportunitiesDiv = document.getElementById('opportunities');
+            opportunitiesDiv.innerHTML = '';
+            if (data.opportunities && data.opportunities.length > 0) {
+                data.opportunities.forEach(opp => {
+                    opportunitiesDiv.innerHTML += `
+                        <div class="border-l-4 border-green-500 pl-4 py-2 fade-in">
+                            <h4 class="font-semibold text-gray-900">${opp.product_concept}</h4>
+                            <p class="text-gray-600 text-sm mb-2">${opp.value_proposition}</p>
+                            <div class="text-xs text-gray-500">
+                                <div>Target: ${opp.target_users ? opp.target_users.join(', ') : ''}</div>
+                                <div>GTM: ${opp.go_to_market || 'Not specified'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Display context
+            const contextDiv = document.getElementById('context');
+            contextDiv.innerHTML = '';
+            if (data.context) {
+                contextDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div><strong>Description:</strong> ${data.context.description}</div>
+                        <div><strong>Current State:</strong> ${data.context.current_state}</div>
+                        <div><strong>Importance:</strong> ${data.context.importance}</div>
+                        <div><strong>Market Size:</strong> ${data.context.market_size}</div>
+                        <div><strong>Key Players:</strong> ${data.context.key_players ? data.context.key_players.join(', ') : ''}</div>
+                    </div>
+                `;
+            }
+
+            // Display metrics
+            const metricsDiv = document.getElementById('metrics');
+            metricsDiv.innerHTML = '';
+            if (data.metrics) {
+                metricsDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div><strong>KPIs:</strong> ${data.metrics.kpis ? data.metrics.kpis.join(', ') : ''}</div>
+                        <div><strong>Adoption Metrics:</strong> ${data.metrics.adoption_metrics ? data.metrics.adoption_metrics.join(', ') : ''}</div>
+                        <div><strong>Business Metrics:</strong> ${data.metrics.business_metrics ? data.metrics.business_metrics.join(', ') : ''}</div>
+                    </div>
+                `;
+            }
+        }
+
+        async function sendChatMessage() {
+            const message = document.getElementById('chatInput').value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.innerHTML += `
+                <div class="mb-4">
+                    <div class="flex justify-end">
+                        <div class="bg-blue-600 text-white rounded-lg px-4 py-2 max-w-xs">
+                            ${message}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('chatInput').value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Add typing indicator
+            chatHistory.innerHTML += `
+                <div class="mb-4">
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 rounded-lg px-4 py-2">
+                            <div class="typing-indicator"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            try {
+                const response = await fetch(`/vertical-chat-stream/${selectedVertical}/${encodeURIComponent(currentQuery)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: message,
+                        context: chatContext
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let botResponse = '';
+
+                // Remove typing indicator
+                chatHistory.removeChild(chatHistory.lastElementChild);
+
+                // Add bot message container
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.className = 'mb-4';
+                botMessageDiv.innerHTML = `
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 rounded-lg px-4 py-2 max-w-xs">
+                            <span id="botResponseText"></span>
+                        </div>
+                    </div>
+                `;
+                chatHistory.appendChild(botMessageDiv);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    botResponse += chunk;
+                    document.getElementById('botResponseText').textContent = botResponse;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+
+            } catch (error) {
+                console.error('Chat error:', error);
+                // Remove typing indicator and show error
+                chatHistory.removeChild(chatHistory.lastElementChild);
+                chatHistory.innerHTML += `
+                    <div class="mb-4">
+                        <div class="flex justify-start">
+                            <div class="bg-red-200 text-red-800 rounded-lg px-4 py-2">
+                                Error: ${error.message}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Enter key handlers
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeVertical();
+            }
+        });
+
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
+    </script>
+</body>
+</html> 

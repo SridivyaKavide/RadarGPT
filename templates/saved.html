@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Saved Queries – Collections</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    html, body {
+      background: #000;
+      color: #e7faff;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .side-nav {
+      position: fixed;
+      top: 0; left: 0;
+      width: 80px;
+      height: 100vh;
+      background: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.6rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+    .container {
+      margin-left: 80px;
+      padding: 2.5rem 1rem 1rem 1rem;
+      max-width: 1100px;
+      min-height: 100vh;
+      margin-right: auto;
+    }
+    h1 {
+      color: #00fff7;
+      text-align: center;
+      font-size: 2.2rem;
+      margin-bottom: 2.2rem;
+      letter-spacing: 1.5px;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      background: linear-gradient(90deg,#00fff7,#5e9fd4,#00fff7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    .searchbar-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 2.1rem;
+      margin-top: 0.8rem;
+      width: 100%;
+    }
+    .searchbar-box {
+      background: #101e2b;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 14px #00fff710, 0 0 0 2px #22384a;
+      padding: 0.3em 1.2em 0.3em 1.2em;
+      max-width: 520px;
+      width: 100%;
+      border: 1.5px solid #00fff7;
+      transition: box-shadow 0.18s, border 0.18s;
+    }
+    .searchbar-box:focus-within {
+      box-shadow: 0 4px 18px #00fff7, 0 0 0 2px #00fff7;
+      border: 1.5px solid #00fff7;
+    }
+    .searchbar-box input[type="search"] {
+      background: none;
+      border: none;
+      outline: none;
+      color: #e7faff;
+      font-size: 1.13em;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      padding: 0.6em 0.8em;
+      width: 100%;
+      min-width: 0;
+      border-radius: 30px;
+      text-align: center;
+    }
+    .searchbar-box input[type="search"]::placeholder {
+      color: #8edbe9;
+      opacity: 1;
+      font-size: 1em;
+      text-align: center;
+    }
+    .searchbar-box .search-icon {
+      font-size: 1.4em;
+      color: #00fff7;
+      margin-right: 0.6em;
+    }
+    .collections-card-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.2rem;
+      margin-bottom: 2.5rem;
+      justify-content: center;
+      align-items: flex-start;
+      padding-bottom: 0.8rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .collection-card, .add-collection-card {
+      width: 120px;
+      height: 180px;
+      min-width: 120px;
+      min-height: 180px;
+      background: linear-gradient(120deg,#101e2b 80%, #00fff7 160%);
+      color: #00fff7;
+      border-radius: 12px;
+      font-size: 1.13em;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      box-shadow: 0 8px 32px #00fff710, 0 0 0 2px #22384a;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid transparent;
+      transition: transform 0.18s, box-shadow 0.18s, border 0.18s, background 0.18s;
+      user-select: none;
+      text-align: center;
+      margin-bottom: 1.5em;
+      /* Book spine effect */
+      box-shadow: -5px 5px 10px rgba(0,0,0,0.5), 
+                  inset -3px 0 5px rgba(0,0,0,0.2),
+                  0 0 0 2px #22384a;
+      transform: perspective(800px) rotateY(5deg);
+    }
+    .collection-card:hover {
+      transform: scale(1.05);
+    }
+    .collection-card .icon {
+      font-size: 2.9em;
+      margin-bottom: 0.4em;
+      filter: drop-shadow(0 0 8px #00fff7);
+    }
+    .collection-card .remove-collection-btn {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      background: #ff3b3b;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      opacity: 0.8;
+      display: none;
+      transition: background 0.18s;
+      z-index: 3;
+    }
+    .collection-card:hover .remove-collection-btn {
+      display: block;
+    }
+    
+    /* Context menu styles */
+    .context-menu {
+      position: absolute;
+      background: #101e2b;
+      border: 1px solid #00fff7;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,255,247,0.3);
+      z-index: 1000;
+      padding: 8px 0;
+      min-width: 150px;
+    }
+    .context-menu-item {
+      padding: 8px 15px;
+      cursor: pointer;
+      color: #fff;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .context-menu-item:hover {
+      background: rgba(0,255,247,0.1);
+    }
+    .collection-card .count-badge {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: #00fff7;
+      color: #001f2f;
+      font-weight: 700;
+      font-size: 1.08em;
+      border-radius: 12px;
+      padding: 5px 14px;
+      box-shadow: 0 2px 8px #00fff7;
+      pointer-events: none;
+      letter-spacing: 0.04em;
+      z-index: 2;
+      border: 2px solid #101e2b;
+      transition: background 0.18s;
+      opacity: 0.92;
+    }
+    .add-collection-card {
+      background: linear-gradient(120deg,#101e2b 80%, #5e9fd4 160%);
+      color: #00fff7;
+      border: 2.5px dashed #00fff7;
+      font-weight: 700;
+      font-size: 1.23em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.17s, border 0.17s, color 0.17s;
+    }
+    .add-collection-card:hover {
+      background: linear-gradient(120deg,#192d3a 80%, #00fff7 160%);
+      border: 2.5px solid #00fff7;
+      color: #fff;
+    }
+    .empty-collections-msg {
+      color: #5e9fd4;
+      text-align: center;
+      margin: 2em auto 2em auto;
+      font-size: 1.1em;
+      letter-spacing: 0.2px;
+    }
+    .search-results-list {
+      margin: 2.5em auto 2em auto;
+      width: 100%;
+      max-width: 700px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .search-result-block {
+      background: #101e2b;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,255,247,0.08), 0 0 0 1px #22384a;
+      margin-bottom: 1.3em;
+      padding: 1.2em 1.2em 1em 1.2em;
+      position: relative;
+      width: 100%;
+      max-width: 700px;
+      animation: cardPop 0.5s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    .search-result-block .query-title {
+      color: #00fff7;
+      font-size: 1.07em;
+      margin-bottom: 0.5em;
+      font-weight: 700;
+    }
+    .search-result-block .collection-label {
+      color: #5e9fd4;
+      font-size: 0.98em;
+      font-weight: 600;
+      margin-bottom: 0.3em;
+      margin-top: -0.2em;
+      letter-spacing: 0.1px;
+    }
+    .sources-content {
+      background: #14222e;
+      border-radius: 8px;
+      padding: 0.8em 1em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+      color: #b0faff;
+      font-size: 0.98em;
+      box-shadow: 0 1px 8px #00fff7;
+      max-height: 300px;
+      overflow-y: auto;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .sources-content h3 {
+      color: #00fff7;
+      font-size: 1.04em;
+      margin-bottom: 0.3em;
+      margin-top: 0;
+    }
+    .toggle-sources-btn {
+      background: #00fff7;
+      color: #001f2f;
+      font-weight: bold;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 0.5em;
+      margin-top: 0.5em;
+    }
+    .remove-saved-btn {
+      background: #ff3b3b;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 0.3em 0.9em;
+      font-size: 0.98em;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 1em;
+      margin-top: 0.3em;
+      position: absolute;
+      right: 1em;
+      top: 1em;
+      transition: background 0.18s;
+    }
+    .remove-saved-btn:hover {
+      background: #ff0000;
+    }
+    mark {
+      background: #00fff7;
+      color: #001f2f;
+      padding: 0 2px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    #addCollectionModal {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.24);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s;
+    }
+    #addCollectionModal .modal-content {
+      background: #101e2b;
+      color: #fff;
+      border-radius: 14px;
+      padding: 2rem 2.5rem;
+      min-width: 320px;
+      max-width: 90vw;
+      box-shadow: 0 4px 32px #00fff7;
+      animation: cardPop 0.5s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    #addCollectionModal input {
+      width: 100%;
+      margin-bottom: 1.2em;
+      padding: 0.6em 1em;
+      border-radius: 8px;
+      border: 1.5px solid #00fff7;
+      background: #000;
+      color: #fff;
+      font-size: 1em;
+      font-family: inherit;
+    }
+    #addCollectionModal .modal-actions {
+      display: flex; gap: 1em;
+    }
+    #addCollectionModal button {
+      font-family: inherit;
+      font-size: 1em;
+      font-weight: 700;
+      padding: 0.7em 1.3em;
+      border-radius: 18px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    #addCollectionModal .create-btn {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+    }
+    #addCollectionModal .cancel-btn {
+      background: #222;
+      color: #00fff7;
+    }
+    /* Modal styles */
+    .collection-modal {
+      display: none;
+      position: fixed;
+      z-index: 10001;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.97);
+      overflow-y: auto;
+      animation: fadeIn 0.3s;
+    }
+    .collection-modal.active {
+      display: block;
+    }
+    .collection-modal-inner {
+      margin-left: 80px;
+      padding: 2.5rem 0 2.5rem 0;
+      max-width: 1100px;
+      min-height: 100vh;
+      margin-right: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .collection-modal .back-btn {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 18px;
+      padding: 0.7em 2em;
+      font-size: 1.1em;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      margin-bottom: 2.5em;
+      margin-top: 1em;
+      align-self: flex-start;
+      margin-left: 0;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    }
+    .collection-modal .back-btn:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+    }
+    .collection-modal-title {
+      color: #00fff7;
+      font-size: 2.2rem;
+      margin-bottom: 2.2rem;
+      letter-spacing: 1.5px;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      background: linear-gradient(90deg,#00fff7,#5e9fd4,#00fff7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      text-align: center;
+      width: 100%;
+    }
+    .collection-modal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2em;
+      margin-bottom: 2.2em;
+    }
+    .collection-modal-nav button {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 18px;
+      padding: 0.7em 2em;
+      font-size: 1.1em;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    }
+    .collection-modal-nav button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .collection-modal-nav .nav-index {
+      color: #00fff7;
+      font-size: 1.18em;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      cursor: default;
+      margin: 0 0.7em;
+    }
+    .collection-modal-saved-list {
+      width: 100%;
+      max-width: 950px;
+      margin: 0 auto;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .collection-modal .saved-query {
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 1.13em;
+      padding: 2.2em 2em 2em 2em;
+      background: #101e2b;
+      border-radius: 12px;
+      box-shadow: 0 2px 16px rgba(0,255,247,0.08), 0 0 0 1px #22384a;
+      margin-bottom: 1.3em;
+      position: relative;
+      overflow: hidden;
+      animation: cardPop 0.5s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    .saved-query .query-title {
+      color: #00fff7;
+      font-size: 1.07em;
+      margin-bottom: 0.5em;
+      font-weight: 700;
+    }
+    .sources-content {
+      background: #14222e;
+      border-radius: 8px;
+      padding: 0.8em 1em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+      color: #b0faff;
+      font-size: 0.98em;
+      box-shadow: 0 1px 8px #00fff7;
+      max-height: 300px;
+      overflow-y: auto;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .sources-content h3 {
+      color: #00fff7;
+      font-size: 1.04em;
+      margin-bottom: 0.3em;
+      margin-top: 0;
+    }
+    .toggle-sources-btn {
+      background: #00fff7;
+      color: #001f2f;
+      font-weight: bold;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 0.5em;
+      margin-top: 0.5em;
+    }
+    .remove-saved-btn {
+      background: #ff3b3b;
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 0.3em 0.9em;
+      font-size: 0.98em;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 1em;
+      margin-top: 0.3em;
+      position: absolute;
+      right: 1em;
+      top: 1em;
+      transition: background 0.18s;
+    }
+    .remove-saved-btn:hover {
+      background: #ff0000;
+    }
+    @keyframes cardPop {
+      0% { opacity: 0; transform: scale(0.8) translateY(30px);}
+      100% { opacity: 1; transform: scale(1) translateY(0);}
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (max-width: 900px) {
+      .container { max-width: 98vw; }
+      .collections-card-bar { gap: 1em; }
+      .collection-card, .add-collection-card { width: 120px; height: 120px; min-width: 120px; min-height: 120px; font-size: 1em; }
+      .collection-modal-inner { max-width: 98vw; }
+      .collection-modal-saved-list { max-width: 98vw; }
+      .collection-modal .saved-query { max-width: 98vw; font-size: 1em; }
+    }
+    @media (max-width: 600px) {
+      .container { padding-left: 0; }
+      .side-nav { width: 60px; }
+      .side-nav a { font-size: 0.6rem; }
+      .saved-list { max-width: 98vw; }
+      #addCollectionModal .modal-content { padding: 1.2em 0.7em; min-width: 0; }
+      .collections-card-bar { flex-direction: row; gap: 0.7em; }
+      .collection-modal-inner { margin-left: 0; }
+    }
+
+header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 80px; /* Leaves space for left sidebar */
+  height: 50px;
+  background: #0b1c26;
+  z-index: 30;
+  display: flex;
+  justify-content: flex-end; /* Push content to the right */
+  align-items: center;
+  padding: 0 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.7);
+}
+
+header nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+header nav a {
+  color: #b0faff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header nav a:hover {
+  background-color: #00fff7;
+  color: #000;
+}
+
+
+  </style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+  </nav>
+</header>
+
+  <canvas id="star-bg-canvas"></canvas>
+  <<!-- Sidebar Navigation -->
+<div class="side-nav">
+  <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+    <span>RadarGPT</span>
+  </a><br>
+
+  <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+    <span>Verticals</span>
+  </a><br>
+
+  <a href="/pain-cloud-combined" title="Pain-cloud">
+    <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+    <span>Insights</span>
+  </a><br>
+
+  <a href="/saved" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+    <span>Saved</span>
+  </a><br>
+  
+  <a href="/pricing" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/price-tag.png" alt="Account"/>
+    <span>Pricing</span>
+  </a><br>
+</div>
+
+  <div class="container" id="mainContainer">
+    <h1>Saved Queries</h1>
+    <div class="searchbar-container">
+      <form id="searchForm" class="searchbar-box" autocomplete="off" onsubmit="return false;">
+        <span class="search-icon">&#128269;</span>
+        <input type="search" id="searchInput" placeholder="Search all saved queries..." autocomplete="off" />
+      </form>
+    </div>
+    <div class="search-results-list" id="searchResultsList" style="display:none;"></div>
+    <div class="collections-card-bar" id="collectionsCardBar"></div>
+    <div class="empty-collections-msg" id="emptyCollectionsMsg" style="display:none;">
+      No collections yet. Click <b>Add Collection</b> to get started!
+    </div>
+  </div>
+  <div id="addCollectionModal">
+    <div class="modal-content">
+      <h2 style="color:#00fff7; font-size:1.2rem; margin-bottom:1.2rem;">Add New Collection</h2>
+      <input id="newCollectionName" type="text" placeholder="Collection name"/>
+      <div class="modal-actions">
+        <button class="create-btn" id="createCollectionBtn">Create</button>
+        <button class="cancel-btn" id="cancelCreateCollectionBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div class="collection-modal" id="collectionModal">
+    <div class="collection-modal-inner">
+      <button class="back-btn" id="backToCollectionsBtn">&larr; Back to Collections</button>
+      <div class="collection-modal-title" id="collectionModalTitle"></div>
+      <div class="collection-modal-nav" id="collectionModalNav"></div>
+      <div class="collection-modal-saved-list" id="collectionModalSavedList"></div>
+    </div>
+  </div>
+  <script>
+    // Star background (canvas, performant, no CSS hacks)
+    const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [], STAR_COUNT = 180;
+    function resize() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+    window.addEventListener('resize', resize); resize();
+    function randomStar() { return { x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3, dx: (Math.random() - 0.5) * 0.08, dy: (Math.random() - 0.5) * 0.08, twinkle: Math.random() * Math.PI * 2 }; }
+    function createStars() { stars = []; for (let i = 0; i < STAR_COUNT; i++) stars.push(randomStar()); }
+    function drawStars() { ctx.clearRect(0, 0, w, h); for (let star of stars) { star.twinkle += 0.03; let opacity = 0.6 + 0.4 * Math.sin(star.twinkle); ctx.save(); ctx.globalAlpha = opacity; ctx.beginPath(); ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6; ctx.fill(); ctx.restore(); star.x += star.dx; star.y += star.dy; if (star.x < 0) star.x = w; if (star.x > w) star.x = 0; if (star.y < 0) star.y = h; if (star.y > h) star.y = 0; } requestAnimationFrame(drawStars);}
+    createStars(); drawStars();
+    window.addEventListener('resize', () => { resize(); createStars(); });
+  </script>
+  <script>
+    // --- Storage helpers ---
+    const SAVED_KEY = 'radargpt_saved_queries';
+
+    function getSavedQueries() {
+      return JSON.parse(localStorage.getItem(SAVED_KEY) || '{}');
+    }
+    function setSavedQueries(obj) {
+      localStorage.setItem(SAVED_KEY, JSON.stringify(obj));
+    }
+
+    let currentCollection = null;
+
+    function renderCollectionsCardBar() {
+    const saved = getSavedQueries();
+    const collections = Object.keys(saved);
+    const bar = document.getElementById('collectionsCardBar');
+    const emptyMsg = document.getElementById('emptyCollectionsMsg');
+    bar.innerHTML = '';
+
+    if (!collections.length) {
+      emptyMsg.style.display = 'block';
+      currentCollection = null;
+    } else {
+      emptyMsg.style.display = 'none';
+    }
+
+    collections.forEach(col => {
+      const count = saved[col] ? saved[col].length : 0;
+      const card = document.createElement('div');
+      card.className = 'collection-card';
+      card.innerHTML = `
+        <div style="font-size:1.05em;color:#00fff7;font-weight:600;margin-bottom:0.5em;">
+          ${count} Saved
+        </div>
+        <span class="icon">🗂️</span>
+        <div>${col}</div>
+        <button class="remove-collection-btn" title="Delete Collection">&times;</button>
+      `;
+      // Add click handler
+      card.onclick = e => {
+        if (e.target.classList.contains('remove-collection-btn')) {
+          e.stopPropagation();
+          removeCollection(col);
+          return;
+        }
+        openCollectionModal(col);
+      };
+      
+      // Add context menu (right-click) handler
+      card.oncontextmenu = e => {
+        showContextMenu(e, col);
+      };
+      bar.appendChild(card);
+    });
+
+    // Add Collection card
+    const addCard = document.createElement('div');
+    addCard.className = 'add-collection-card';
+    addCard.innerHTML = '<span style="font-size:2em;margin-right:0.3em;">＋</span><span style="font-size:0.95em;">Add Collection</span>';
+    addCard.onclick = () => {
+      document.getElementById('addCollectionModal').style.display = 'flex';
+      document.getElementById('newCollectionName').value = '';
+      document.getElementById('newCollectionName').focus();
+    };
+    bar.appendChild(addCard);
+  }
+
+    // --- Modal navigation logic ---
+    let modalSavedQueries = [];
+    let modalQueryIndex = 0;
+
+    function openCollectionModal(col) {
+      currentCollection = col;
+      document.getElementById('mainContainer').style.display = 'none';
+      const modal = document.getElementById('collectionModal');
+      document.body.style.overflow = 'hidden';
+      modal.classList.add('active');
+      document.getElementById('collectionModalTitle').textContent = col;
+
+      modalSavedQueries = (getSavedQueries()[col] || []);
+      modalQueryIndex = 0;
+      renderModalNav();
+      renderModalSavedQuery();
+      window.scrollTo({top: 0, behavior: "auto"});
+    }
+
+    function closeCollectionModal() {
+      document.getElementById('mainContainer').style.display = '';
+      document.getElementById('collectionModal').classList.remove('active');
+      document.body.style.overflow = '';
+      window.scrollTo({top: 0, behavior: "auto"});
+      renderCollectionsCardBar();
+    }
+
+    document.getElementById('backToCollectionsBtn').onclick = closeCollectionModal;
+
+    function renderModalNav() {
+      const nav = document.getElementById('collectionModalNav');
+      if (!modalSavedQueries.length) {
+        nav.innerHTML = '';
+        return;
+      }
+      nav.innerHTML = `
+        <button id="modalPrevBtn" ${modalQueryIndex === 0 ? 'disabled' : ''}>&larr; Previous</button>
+        <span class="nav-index">${modalQueryIndex+1} / ${modalSavedQueries.length}</span>
+        <button id="modalNextBtn" ${modalQueryIndex === modalSavedQueries.length-1 ? 'disabled' : ''}>Next &rarr;</button>
+      `;
+      document.getElementById('modalPrevBtn').onclick = () => {
+        if (modalQueryIndex > 0) {
+          modalQueryIndex--;
+          renderModalNav();
+          renderModalSavedQuery();
+        }
+      };
+      document.getElementById('modalNextBtn').onclick = () => {
+        if (modalQueryIndex < modalSavedQueries.length-1) {
+          modalQueryIndex++;
+          renderModalNav();
+          renderModalSavedQuery();
+        }
+      };
+    }
+
+    function renderModalSavedQuery() {
+      const list = document.getElementById('collectionModalSavedList');
+      if (!modalSavedQueries.length) {
+        list.innerHTML = '<i>No saved queries in this collection.</i>';
+        return;
+      }
+      const q = modalSavedQueries[modalQueryIndex];
+      list.innerHTML = '';
+      const div = document.createElement('div');
+      div.className = 'saved-query';
+      div.innerHTML = `
+        <div class="query-title">${q.query || '(No Title)'}</div>
+        <div style="margin-bottom:0.8em;">${q.html || ''}</div>
+        ${q.sources || q.sourcesHtml ? `
+          <button class="toggle-sources-btn" style="background:#00fff7; color:#001f2f; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-bottom: 0.5em;">
+            Show Sources
+          </button>
+          <div class="sources-content" style="display:none;"><h3>Sources</h3>${q.sources || q.sourcesHtml}</div>` : ''}
+        <button class="remove-saved-btn" title="Remove" data-idx="${modalQueryIndex}">Remove</button>
+      `;
+      const toggleBtn = div.querySelector('.toggle-sources-btn');
+      const sourcesDiv = div.querySelector('.sources-content');
+      if (toggleBtn && sourcesDiv) {
+        toggleBtn.onclick = () => {
+          const visible = sourcesDiv.style.display === 'block';
+          sourcesDiv.style.display = visible ? 'none' : 'block';
+          toggleBtn.textContent = visible ? 'Show Sources' : 'Hide Sources';
+        };
+      }
+      div.querySelector('.remove-saved-btn').onclick = function() {
+        removeSavedQuery(currentCollection, modalQueryIndex);
+        modalSavedQueries = (getSavedQueries()[currentCollection] || []);
+        if (modalQueryIndex >= modalSavedQueries.length) modalQueryIndex = Math.max(0, modalSavedQueries.length-1);
+        renderModalNav();
+        renderModalSavedQuery();
+      };
+      list.appendChild(div);
+    }
+
+    function removeSavedQuery(col, idx) {
+      const saved = getSavedQueries();
+      if (saved[col]) {
+        saved[col].splice(idx, 1);
+        if (saved[col].length === 0) delete saved[col];
+        setSavedQueries(saved);
+        // If that was the last collection, reset selection
+        const collections = Object.keys(getSavedQueries());
+        if (!collections.length) currentCollection = null;
+        else if (!getSavedQueries()[currentCollection]) currentCollection = collections[0];
+        renderCollectionsCardBar();
+      }
+    }
+
+    function removeCollection(col) {
+      const saved = getSavedQueries();
+      delete saved[col];
+      setSavedQueries(saved);
+      // Reset selection if needed
+      const collections = Object.keys(getSavedQueries());
+      currentCollection = collections.length ? collections[0] : null;
+      renderCollectionsCardBar();
+    }
+
+    // --- Search Bar Logic with Highlight ---
+    function highlightText(text, search) {
+      if (!search) return text;
+      const esc = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return text.replace(new RegExp(esc, 'gi'), match => `<mark>${match}</mark>`);
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    const searchResultsList = document.getElementById('searchResultsList');
+    searchInput.addEventListener('input', function() {
+      const q = searchInput.value.trim();
+      const qLower = q.toLowerCase();
+      if (!q) {
+        searchResultsList.style.display = 'none';
+        document.getElementById('mainContainer').style.display = '';
+        document.getElementById('collectionModal').classList.remove('active');
+        renderCollectionsCardBar();
+        return;
+      }
+      // flatten all saved queries
+      const saved = getSavedQueries();
+      let results = [];
+      Object.entries(saved).forEach(([col, arr]) => {
+        arr.forEach((item, idx) => {
+          if (
+            (item.query && item.query.toLowerCase().includes(qLower)) ||
+            (item.html && item.html.toLowerCase().includes(qLower)) ||
+            (item.sources && item.sources.toLowerCase().includes(qLower))
+          ) {
+            results.push({...item, _collection: col});
+          }
+        });
+      });
+      renderSearchResults(results, q);
+      document.getElementById('mainContainer').style.display = '';
+      document.getElementById('collectionModal').classList.remove('active');
+    });
+
+    function renderSearchResults(results, q) {
+      searchResultsList.innerHTML = '';
+      if (!results.length) {
+        searchResultsList.style.display = 'block';
+        searchResultsList.innerHTML = `<div style="color:#5e9fd4;text-align:center;margin:2em 0 2em 0;">No results found for "<b>${q}</b>".</div>`;
+        return;
+      }
+      searchResultsList.style.display = 'flex';
+      results.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'search-result-block';
+        // Highlight in query, html, sources
+        const title = item.query ? highlightText(item.query, q) : '';
+        const html = item.html ? highlightText(item.html, q) : '';
+        const sources = (item.sources || item.sourcesHtml) ? highlightText(item.sources || item.sourcesHtml, q) : '';
+        div.innerHTML = `
+          <div class="collection-label">Collection: ${item._collection}</div>
+          <div class="query-title">${title || '(No Title)'}</div>
+          <div style="margin-bottom:0.8em;">${html}</div>
+          ${sources ? `
+            <button class="toggle-sources-btn" style="background:#00fff7; color:#001f2f; font-weight:bold; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; margin-bottom: 0.5em;">
+              Show Sources
+            </button>
+            <div class="sources-content" style="display:none;"><h3>Sources</h3>${sources}</div>` : ''}
+        `;
+        const toggleBtn = div.querySelector('.toggle-sources-btn');
+        const sourcesDiv = div.querySelector('.sources-content');
+        if (toggleBtn && sourcesDiv) {
+          toggleBtn.onclick = () => {
+            const visible = sourcesDiv.style.display === 'block';
+            sourcesDiv.style.display = visible ? 'none' : 'block';
+            toggleBtn.textContent = visible ? 'Show Sources' : 'Hide Sources';
+          };
+        }
+        searchResultsList.appendChild(div);
+      });
+    }
+
+    // --- Context Menu Logic ---
+    let contextMenuTarget = null;
+    
+    function showContextMenu(e, collection) {
+      e.preventDefault();
+      
+      // Remove any existing context menus
+      hideContextMenu();
+      
+      // Create context menu
+      const menu = document.createElement('div');
+      menu.className = 'context-menu';
+      menu.style.left = `${e.pageX}px`;
+      menu.style.top = `${e.pageY}px`;
+      
+      // Rename option
+      const renameItem = document.createElement('div');
+      renameItem.className = 'context-menu-item';
+      renameItem.innerHTML = '<span>✏️</span> Rename';
+      renameItem.onclick = () => {
+        hideContextMenu();
+        showRenameModal(collection);
+      };
+      menu.appendChild(renameItem);
+      
+      // Delete option
+      const deleteItem = document.createElement('div');
+      deleteItem.className = 'context-menu-item';
+      deleteItem.innerHTML = '<span>🗑️</span> Delete';
+      deleteItem.onclick = () => {
+        hideContextMenu();
+        removeCollection(collection);
+      };
+      menu.appendChild(deleteItem);
+      
+      document.body.appendChild(menu);
+      contextMenuTarget = menu;
+      
+      // Close menu when clicking elsewhere
+      setTimeout(() => {
+        document.addEventListener('click', hideContextMenu);
+      }, 0);
+    }
+    
+    function hideContextMenu() {
+      if (contextMenuTarget) {
+        contextMenuTarget.remove();
+        contextMenuTarget = null;
+      }
+      document.removeEventListener('click', hideContextMenu);
+    }
+    
+    function showRenameModal(oldName) {
+      const modal = document.getElementById('addCollectionModal');
+      const titleEl = modal.querySelector('h2');
+      const inputEl = document.getElementById('newCollectionName');
+      const createBtn = document.getElementById('createCollectionBtn');
+      
+      titleEl.textContent = 'Rename Collection';
+      inputEl.value = oldName;
+      createBtn.textContent = 'Rename';
+      modal.style.display = 'flex';
+      inputEl.focus();
+      inputEl.select();
+      
+      // Store the old name for reference
+      modal.dataset.oldName = oldName;
+      modal.dataset.mode = 'rename';
+    }
+    
+    function resetAddCollectionModal() {
+      const modal = document.getElementById('addCollectionModal');
+      const titleEl = modal.querySelector('h2');
+      const createBtn = document.getElementById('createCollectionBtn');
+      
+      titleEl.textContent = 'Add New Collection';
+      createBtn.textContent = 'Create';
+      delete modal.dataset.oldName;
+      modal.dataset.mode = 'add';
+    }
+
+    // --- Add/Rename Collection Modal Logic ---
+    const addCollectionModal = document.getElementById('addCollectionModal');
+    const createCollectionBtn = document.getElementById('createCollectionBtn');
+    const cancelCreateCollectionBtn = document.getElementById('cancelCreateCollectionBtn');
+    
+    cancelCreateCollectionBtn.onclick = () => { 
+      addCollectionModal.style.display = 'none';
+      resetAddCollectionModal();
+    };
+    
+    createCollectionBtn.onclick = () => {
+      const name = document.getElementById('newCollectionName').value.trim();
+      if (!name) return;
+      
+      const saved = getSavedQueries();
+      const mode = addCollectionModal.dataset.mode || 'add';
+      
+      if (mode === 'rename') {
+        const oldName = addCollectionModal.dataset.oldName;
+        if (oldName && oldName !== name) {
+          // Rename collection (copy data to new name and delete old)
+          saved[name] = saved[oldName] || [];
+          delete saved[oldName];
+          setSavedQueries(saved);
+          
+          // Update current collection if needed
+          if (currentCollection === oldName) {
+            currentCollection = name;
+          }
+        }
+      } else {
+        // Add new collection
+        if (!saved[name]) saved[name] = [];
+        setSavedQueries(saved);
+        currentCollection = name;
+      }
+      
+      renderCollectionsCardBar();
+      addCollectionModal.style.display = 'none';
+      resetAddCollectionModal();
+    };
+    
+    document.getElementById('newCollectionName').onkeydown = e => {
+      if (e.key === 'Enter') createCollectionBtn.click();
+    };
+
+    // --- Initial render ---
+    renderCollectionsCardBar();
+  </script>
+</body>
+</html>

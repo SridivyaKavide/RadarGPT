@@ -1,0 +1,11 @@
+{% extends "radargpt.html" %}
+
+{% block content %}
+<div class="result-block" style="margin-top: 20px;">
+  <div class="result-query">Query: <b>{{ query.keyword }}</b></div>
+  <div class="answer-card" style="border: 1px solid #ccc; padding: 15px;">
+    <h2>Saved Summary</h2>
+    <div class="summary-content">{{ query.result | safe }}</div>
+  </div>
+</div>
+{% endblock %}

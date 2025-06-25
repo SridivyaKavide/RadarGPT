@@ -1,0 +1,11 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="result-block">
+  <div class="result-query">Query: <b>{{ query.keyword }}</b></div>
+  <div class="answer-card">
+    <h2>Saved Summary</h2>
+    <div class="summary-content">{{ query.result | safe }}</div>
+  </div>
+</div>
+{% endblock %}

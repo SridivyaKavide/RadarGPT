@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - RadarGPT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --side-nav-width: 80px;
+            --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html, body {
+            height: 100%;
+            background: #000;
+            color: white;
+            font-family: 'Poppins', 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        #star-bg-canvas {
+            position: fixed;
+            top: 0; 
+            left: 0;
+            width: 100vw; 
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--side-nav-width);
+            height: 100vh;
+            background-color: #0b1c26;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 1.2rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+        }
+        
+        .side-nav a {
+            text-align: center;
+            color: #b0faff;
+            font-size: 0.7rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0px;
+            transition: all 0.3s ease;
+        }
+        
+        .side-nav a:hover {
+            color: #00fff7;
+            transform: scale(1.05);
+        }
+        
+        .side-nav img {
+            width: 20px;
+            height: 20px;
+            filter: brightness(0) invert(1);
+        }
+        
+        .main-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            margin-left: var(--side-nav-width);
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #00fff7;
+            letter-spacing: 2px;
+            font-family: 'Montserrat', 'Poppins', sans-serif;
+            background: linear-gradient(90deg, #00fff7, #5e9fd4, #00fff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 247, 0.2);
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            color: #e7faff;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+        
+        .pricing-card {
+            background: rgba(0,255,247,0.13);
+            border: 1.5px solid rgba(0,255,247,0.23);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 18px rgba(0,255,247,0.10);
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 32px rgba(0,255,247,0.2);
+            background: rgba(0,255,247,0.18);
+        }
+        
+        .pricing-card.featured {
+            border-color: #00fff7;
+            background: rgba(0,255,247,0.18);
+            transform: scale(1.05);
+        }
+        
+        .pricing-card.featured::before {
+            content: "Most Popular";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #00fff7, #5e9fd4);
+            color: #001f2f;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .pricing-card.featured .card-content {
+            margin-top: 2rem;
+        }
+        
+        .card-content {
+            margin-top: 1rem;
+        }
+        
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00fff7;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(0,255,247,0.5);
+        }
+        
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        .plan-period {
+            color: #b0faff;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .plan-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .plan-features li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(0,255,247,0.1);
+            color: #e7faff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .plan-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .plan-features li i {
+            color: #00fff7;
+            font-size: 0.9rem;
+        }
+        
+        .plan-button {
+            background: linear-gradient(90deg, #00fff7, #5e9fd4);
+            color: #001f2f;
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .plan-button:hover {
+            background: linear-gradient(90deg, #5e9fd4, #00fff7);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,255,247,0.3);
+        }
+        
+        .plan-button.secondary {
+            background: rgba(20,20,20,0.45);
+            color: #00fff7;
+            border: 1.5px solid rgba(0,255,247,0.15);
+        }
+        
+        .plan-button.secondary:hover {
+            background: rgba(20,20,20,0.75);
+            border-color: #00fff7;
+        }
+        
+        .features-section {
+            background: rgba(0,255,247,0.13);
+            border: 1.5px solid rgba(0,255,247,0.23);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 18px rgba(0,255,247,0.10);
+            margin-top: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .features-section h3 {
+            color: #00fff7;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(20,20,20,0.45);
+            border: 1.5px solid rgba(0,255,247,0.15);
+            border-radius: 10px;
+        }
+        
+        .feature-item i {
+            color: #00fff7;
+            font-size: 1.2rem;
+        }
+        
+        .feature-text {
+            color: #e7faff;
+        }
+        
+        .feature-text h4 {
+            color: #00fff7;
+            margin-bottom: 0.3rem;
+        }
+        
+        .feature-text p {
+            font-size: 0.9rem;
+            color: #b0faff;
+        }
+        
+        .faq-section {
+            margin-top: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .faq-section h3 {
+            color: #00fff7;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .faq-item {
+            background: rgba(0,255,247,0.13);
+            border: 1.5px solid rgba(0,255,247,0.23);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            background: rgba(20,20,20,0.45);
+            padding: 1rem;
+            cursor: pointer;
+            color: #00fff7;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-question:hover {
+            background: rgba(20,20,20,0.75);
+        }
+        
+        .faq-answer {
+            padding: 1rem;
+            color: #e7faff;
+            display: none;
+        }
+        
+        .faq-answer.active {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .side-nav {
+                display: none;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .pricing-card.featured {
+                transform: none;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="star-bg-canvas"></canvas>
+    
+    <!-- Side Navigation -->
+    <div class="side-nav">
+        <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+            <span>RadarGPT</span>
+        </a><br>
+       
+        <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+            <span>Verticals</span>
+        </a><br>
+       
+        <a href="/pain-cloud-combined" title="Pain-cloud">
+            <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+            <span>Insights</span>
+        </a><br>
+       
+        <a href="/live-trends" title="Live Trends" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/news.png" alt="Live Trends"/>
+            <span>Trends</span>
+        </a><br>
+       
+        <a href="/pricing" title="Pricing" style="color: #00fff7;">
+            <img src="https://img.icons8.com/ios-filled/50/price-tag.png" alt="Pricing"/>
+            <span>Pricing</span>
+        </a><br>
+       
+        <a href="/usage-dashboard" title="Usage">
+            <img src="https://img.icons8.com/ios-filled/50/dashboard.png" alt="Usage"/>
+            <span>Usage</span>
+        </a><br>
+       
+        <a href="/saved" title="Saved">
+            <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+            <span>Saved</span>
+        </a><br>
+    </div>
+    
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-tags"></i> Choose Your Plan</h1>
+            <p>Unlock the full potential of RadarGPT with our flexible pricing plans. Start free and upgrade as you grow.</p>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            <!-- Free Tier -->
+            <div class="pricing-card">
+                <div class="card-content">
+                    <div class="plan-name">Free</div>
+                    <div class="plan-price">$0</div>
+                    <div class="plan-period">Forever</div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> 10 searches per month (across all modules)</li>
+                        <li><i class="fas fa-check"></i> RadarGPT: Basic search (Reddit + Stack Overflow only)</li>
+                        <li><i class="fas fa-check"></i> Verticals: 2 vertical insights per month</li>
+                        <li><i class="fas fa-check"></i> Insights: Basic pain cloud (limited data)</li>
+                        <li><i class="fas fa-check"></i> Trends: Free</li>
+                    </ul>
+                    <button class="plan-button secondary" onclick="selectPlan('free')">Get Started Free</button>
+                </div>
+            </div>
+
+            <!-- Pro Tier -->
+            <div class="pricing-card featured">
+                <div class="card-content">
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">$19</div>
+                    <div class="plan-period">per month</div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Unlimited searches across all modules</li>
+                        <li><i class="fas fa-check"></i> RadarGPT: Full multi-source search + AI analysis</li>
+                        <li><i class="fas fa-check"></i> Verticals: Unlimited vertical insights + streaming</li>
+                        <li><i class="fas fa-check"></i> Insights: Full pain cloud + real-time analytics</li>
+                        <li><i class="fas fa-check"></i> Trends: All time windows + custom alerts</li>
+                        <li><i class="fas fa-check"></i> Export capabilities</li>
+                    </ul>
+                    <form action="/create-checkout-session" method="POST">
+                        <button type="submit" class="btn btn-primary">Upgrade to Pro (Stripe)</button>
+                    </form>
+                    <button id="rzp-button1" class="btn btn-success">Pay with UPI / Card (Razorpay)</button>
+                </div>
+            </div>
+
+            <!-- Annual Pro Tier -->
+            <div class="pricing-card">
+                <div class="card-content">
+                    <div class="plan-name">Pro Annual</div>
+                    <div class="plan-price">$180</div>
+                    <div class="plan-period">per year (save 21%)</div>
+                    <ul class="plan-features">
+                        <li><i class="fas fa-check"></i> Everything in Pro</li>
+                        <li><i class="fas fa-check"></i> 2 months free</li>
+                    </ul>
+                    <button class="plan-button" onclick="selectPlan('annual')">Save with Annual</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="features-section">
+            <h3><i class="fas fa-star"></i> What's Included</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <i class="fas fa-search"></i>
+                    <div class="feature-text">
+                        <h4>Advanced Search</h4>
+                        <p>Multi-source search across Reddit, Stack Overflow, and more</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-brain"></i>
+                    <div class="feature-text">
+                        <h4>AI Insights</h4>
+                        <p>Powered by Groq AI for intelligent trend analysis</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="feature-text">
+                        <h4>Live Trends</h4>
+                        <p>Real-time trending topics and market intelligence</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-users"></i>
+                    <div class="feature-text">
+                        <h4>Team Features</h4>
+                        <p>Collaborate with your team on research projects</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-download"></i>
+                    <div class="feature-text">
+                        <h4>Export Data</h4>
+                        <p>Download reports and data in multiple formats</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-bell"></i>
+                    <div class="feature-text">
+                        <h4>Custom Alerts</h4>
+                        <p>Get notified about trending topics in your niche</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h3><i class="fas fa-question-circle"></i> Frequently Asked Questions</h3>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Can I upgrade or downgrade my plan anytime?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes! You can upgrade or downgrade your plan at any time. Changes will be prorated and reflected in your next billing cycle.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    What happens when I reach my search limit?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Free users will be notified when they reach their limit and can upgrade to Pro for unlimited searches. Pro users have unlimited access.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Is there a free trial for Pro plans?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes! All Pro plans come with a 7-day free trial. No credit card required to start your trial.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    Can I cancel my subscription anytime?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Absolutely. You can cancel your subscription at any time and continue using the service until the end of your billing period.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Starfield background
+        const canvas = document.getElementById('star-bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let w = window.innerWidth, h = window.innerHeight;
+        let stars = [];
+        const STAR_COUNT = 180;
+        
+        function resize() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w;
+            canvas.height = h;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+        
+        function randomStar() {
+            return {
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 1.2 + 0.3,
+                dx: (Math.random() - 0.5) * 0.08,
+                dy: (Math.random() - 0.5) * 0.08,
+                twinkle: Math.random() * Math.PI * 2
+            };
+        }
+        
+        function createStars() {
+            stars = [];
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push(randomStar());
+            }
+        }
+        
+        createStars();
+        
+        function drawStars() {
+            ctx.clearRect(0, 0, w, h);
+            for (let i = 0; i < stars.length; i++) {
+                let star = stars[i];
+                star.twinkle += 0.03 + Math.random() * 0.02;
+                let opacity = 0.6 + 0.4 * Math.sin(star.twinkle);
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+                ctx.fillStyle = "#fff";
+                ctx.shadowColor = "#fff";
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.restore();
+                star.x += star.dx;
+                star.y += star.dy;
+                if (star.x < 0) star.x = w;
+                if (star.x > w) star.x = 0;
+                if (star.y < 0) star.y = h;
+                if (star.y > h) star.y = 0;
+            }
+            requestAnimationFrame(drawStars);
+        }
+        
+        drawStars();
+        
+        window.addEventListener('resize', () => {
+            resize();
+            createStars();
+        });
+
+        // Plan selection function
+        function selectPlan(plan) {
+            // You can implement payment processing here
+            console.log('Selected plan:', plan);
+            
+            // For now, show an alert
+            let message = '';
+            switch(plan) {
+                case 'free':
+                    message = 'You can start using the free plan immediately!';
+                    break;
+                case 'pro':
+                    message = 'Starting your 7-day free trial for Pro plan...';
+                    break;
+                case 'annual':
+                    message = 'Starting your 7-day free trial for Annual Pro plan...';
+                    break;
+            }
+            
+            alert(message);
+        }
+
+        // FAQ toggle function
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const icon = element.querySelector('i');
+            
+            if (answer.classList.contains('active')) {
+                answer.classList.remove('active');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                answer.classList.add('active');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        document.getElementById('rzp-button1').onclick = function(e){
+            fetch('/create-razorpay-order', {method: 'POST'})
+              .then(res => res.json())
+              .then(data => {
+                var options = {
+                    "key": data.razorpay_key_id,
+                    "amount": data.amount,
+                    "currency": data.currency,
+                    "name": "Your App Name",
+                    "description": "Pro Plan",
+                    "order_id": data.order_id,
+                    "handler": function (response){
+                        window.location.href = '/razorpay-success?order_id=' + response.razorpay_order_id + '&payment_id=' + response.razorpay_payment_id;
+                    },
+                    "prefill": {
+                        "email": data.user_email
+                    },
+                    "theme": {"color": "#3399cc"}
+                };
+                var rzp1 = new Razorpay(options);
+                rzp1.open();
+              });
+            e.preventDefault();
+        }
+    </script>
+</body>
+</html> 

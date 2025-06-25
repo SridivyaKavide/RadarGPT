@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertical Insights - RadarGPT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #343a40;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 0.2em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+        .streaming-text {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .chat-message.user {
+            background-color: #007bff;
+            color: white;
+            margin-left: 20%;
+        }
+        .chat-message.bot {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            margin-right: 20%;
+        }
+        .chat-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-building"></i> Vertical Insights
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/app">FindRadar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/radargpt">RadarGPT</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/vertical-insights">Vertical Insights</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-building"></i> Vertical Insights with Streaming
+                    </div>
+                    <div class="card-body">
+                        <form id="verticalForm">
+                            <div class="mb-3">
+                                <label for="verticalSelect" class="form-label">Select Industry Vertical</label>
+                                <select class="form-select" id="verticalSelect" required>
+                                    <option value="">Select a vertical</option>
+                                    <option value="fintech">Financial Technology</option>
+                                    <option value="healthcare">Healthcare & Medical</option>
+                                    <option value="ecommerce">E-Commerce & Retail</option>
+                                    <option value="saas">Software as a Service</option>
+                                    <option value="edtech">Education Technology</option>
+                                    <option value="gaming">Gaming</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="query" class="form-label">Your Query</label>
+                                <input type="text" class="form-control" id="query" placeholder="Enter your query or topic" required>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="streamingCheck" checked>
+                                    <label class="form-check-label" for="streamingCheck">
+                                        Enable streaming (see response in real-time)
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-search"></i> Get Insights
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Streaming Results -->
+        <div class="row" id="streamingContainer" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-lightning"></i> Live Streaming Response
+                    </div>
+                    <div class="card-body">
+                        <div id="streamingContent" class="streaming-text"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regular Results -->
+        <div class="row" id="resultsContainer" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-lightbulb"></i> <span id="resultTitle">Insights</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="insights" class="markdown-body"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="row" id="chatContainer" style="display: none;">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-chat-dots"></i> Ask Follow-up Questions
+                    </div>
+                    <div class="card-body">
+                        <div id="chatHistory" class="chat-container mb-3"></div>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="chatInput" placeholder="Ask a follow-up question...">
+                            <button class="btn btn-outline-primary" type="button" id="chatBtn">
+                                <i class="bi bi-send"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        let currentVertical = '';
+        let currentQuery = '';
+        let chatContext = '';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('verticalForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const vertical = document.getElementById('verticalSelect').value;
+                const query = document.getElementById('query').value.trim();
+                const streamingEnabled = document.getElementById('streamingCheck').checked;
+                
+                if (!vertical || !query) {
+                    alert('Please select a vertical and enter a query');
+                    return;
+                }
+                
+                currentVertical = vertical;
+                currentQuery = query;
+                
+                // Disable submit button
+                const submitBtn = document.getElementById('submitBtn');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="loading-spinner"></span> Generating insights...';
+                
+                // Hide containers
+                document.getElementById('resultsContainer').style.display = 'none';
+                document.getElementById('streamingContainer').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'none';
+                
+                if (streamingEnabled) {
+                    // Use streaming endpoint
+                    fetchStreamingResponse(vertical, query, submitBtn, originalBtnText);
+                } else {
+                    // Use regular endpoint
+                    fetchRegularResponse(vertical, query, submitBtn, originalBtnText);
+                }
+            });
+
+            // Chat functionality
+            document.getElementById('chatBtn').addEventListener('click', sendChatMessage);
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+        });
+
+        async function fetchStreamingResponse(vertical, query, submitBtn, originalBtnText) {
+            try {
+                const response = await fetch(`/analyze-stream/${vertical}/${encodeURIComponent(query)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                // Show streaming container
+                document.getElementById('streamingContainer').style.display = 'block';
+                const streamingContent = document.getElementById('streamingContent');
+                streamingContent.textContent = '';
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    fullResponse += chunk;
+                    streamingContent.textContent = fullResponse;
+                    streamingContent.scrollTop = streamingContent.scrollHeight;
+                }
+
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+
+                // Try to parse as JSON and show structured results
+                try {
+                    const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        displayStructuredResults(parsed);
+                    }
+                } catch (e) {
+                    console.log('Could not parse as JSON, showing as text');
+                }
+
+                chatContext = fullResponse;
+                document.getElementById('chatContainer').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                alert('An error occurred while generating insights: ' + error.message);
+            }
+        }
+
+        async function fetchRegularResponse(vertical, query, submitBtn, originalBtnText) {
+            try {
+                const response = await fetch(`/analyze/${vertical}/${encodeURIComponent(query)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                // Display results
+                document.getElementById('resultTitle').textContent = `${data.vertical_name} Insights: ${query}`;
+                document.getElementById('insights').innerHTML = marked.parse(data.raw_insights || data.insights || '');
+                document.getElementById('resultsContainer').style.display = 'block';
+
+                chatContext = data.raw_insights || data.insights || '';
+                document.getElementById('chatContainer').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                alert('An error occurred while generating insights.');
+            }
+        }
+
+        function displayStructuredResults(data) {
+            // Display structured results if available
+            if (data.structured_insights) {
+                document.getElementById('resultTitle').textContent = `${data.vertical_name} Insights: ${data.query}`;
+                document.getElementById('insights').innerHTML = marked.parse(JSON.stringify(data.structured_insights, null, 2));
+                document.getElementById('resultsContainer').style.display = 'block';
+            }
+        }
+
+        async function sendChatMessage() {
+            const message = document.getElementById('chatInput').value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.innerHTML += `
+                <div class="chat-message user">
+                    <strong>You:</strong> ${message}
+                </div>
+            `;
+
+            document.getElementById('chatInput').value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // Add typing indicator
+            chatHistory.innerHTML += `
+                <div class="chat-message bot">
+                    <div class="typing-indicator"></div> Thinking...
+                </div>
+            `;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            try {
+                const response = await fetch(`/vertical-chat-stream/${currentVertical}/${encodeURIComponent(currentQuery)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: message,
+                        context: chatContext
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let botResponse = '';
+
+                // Remove typing indicator
+                chatHistory.removeChild(chatHistory.lastElementChild);
+
+                // Add bot message container
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.className = 'chat-message bot';
+                botMessageDiv.innerHTML = '<strong>AI:</strong> <span id="botResponseText"></span>';
+                chatHistory.appendChild(botMessageDiv);
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    botResponse += chunk;
+                    document.getElementById('botResponseText').textContent = botResponse;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+
+            } catch (error) {
+                console.error('Chat error:', error);
+                // Remove typing indicator and show error
+                chatHistory.removeChild(chatHistory.lastElementChild);
+                chatHistory.innerHTML += `
+                    <div class="chat-message bot">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

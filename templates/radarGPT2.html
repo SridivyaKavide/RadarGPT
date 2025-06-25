@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProblemSniper – Multi-Source Startup Radar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --history-width: 180px;
+      --collapsed-history-width: 0px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    html, body {
+      min-height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+    .history-sidebar {
+      position: fixed;
+      top: 0;
+      left: var(--side-nav-width);
+      width: var(--history-width);
+      height: 100vh;
+      background: rgba(0, 255, 247, 0.07);
+      box-shadow: 2px 0 14px rgba(0,255,247,0.05);
+      border-right: 1.5px solid rgba(0,255,247,0.12);
+      z-index: 19;
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      overflow-y: auto;
+      gap: 0;
+      align-items: stretch;
+      transition: width var(--transition), left var(--transition), opacity var(--transition), padding var(--transition);
+    }
+    .history-sidebar.collapsed {
+      width: var(--collapsed-history-width);
+      min-width: 0;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .history-title {
+      font-size: 1.1rem;
+      color: #00fff7;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      text-align: left;
+      padding-left: 1rem;
+    }
+    .history-list {
+      list-style: none;
+      padding: 0 0.5rem;
+      margin: 0;
+    }
+    .history-list li {
+      margin-bottom: 0.5rem;
+      padding: 0.7rem 1rem;
+      background: rgba(0,255,247,0.10);
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s;
+      font-size: 0.98rem;
+      text-align: left;
+      border: 1.5px solid rgba(0,255,247,0.15);
+      word-break: break-word;
+      outline: none;
+    }
+    .history-list li.active,
+    .history-list li:focus,
+    .history-list li:hover {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      font-weight: 700;
+    }
+    .history-toggle-btn {
+      position: fixed;
+      top: 16px;
+      left: calc(var(--side-nav-width) + var(--history-width) - 16px);
+      z-index: 30;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #00fff7;
+      color: #001f2f;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      cursor: pointer;
+      transition: left var(--transition), background 0.18s;
+    }
+    .history-sidebar.collapsed + .history-toggle-btn {
+      left: calc(var(--side-nav-width) - 16px);
+    }
+    .history-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: #001f2f;
+      transition: transform 0.25s;
+    }
+    .history-sidebar.collapsed ~ .history-toggle-btn svg {
+      transform: rotate(180deg);
+    }
+    .center-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin-left: calc(var(--side-nav-width) + var(--history-width));
+      padding-bottom: 120px;
+      width: calc(100% - var(--side-nav-width) - var(--history-width));
+      transition: margin-left var(--transition), width var(--transition);
+    }
+    .center-main.collapsed {
+      margin-left: var(--side-nav-width);
+      width: calc(100% - var(--side-nav-width));
+    }
+    .title-header {
+      font-size: 2.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg,#fff,#aaa,#fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+      margin-top: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+    .main-content-area {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: min-height 0.3s;
+    }
+    .mode-cards-container {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      align-items: stretch;
+      margin-bottom: 1.6rem;
+      margin-top: 0.8rem;
+      transition: opacity 0.5s, transform 0.5s;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .mode-card {
+      background: linear-gradient(120deg,rgb(21, 21, 21) 70%, #10202b 100%);
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(7, 7, 7, 0.1), 0 0 0 1px #192d3a;
+      max-width: 200px;
+      min-width: 150px;
+      width: 100%;
+      padding: 1.1rem 1rem 1rem 1rem;
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      animation: cardPop 0.7s cubic-bezier(.6,-0.28,.74,.05) 1;
+      border: 1px solid #0ff;
+      transition: box-shadow 0.25s;
+      margin-bottom: 0.5rem;
+    }
+    .mode-card:hover {
+      box-shadow: 0 6px 18px rgb(255, 255, 255), 0 0 0 2px rgb(0, 0, 0);
+    }
+    @keyframes cardPop {
+      0% { opacity: 0; transform: scale(0.8) translateY(30px);}
+      100% { opacity: 1; transform: scale(1) translateY(0);}
+    }
+    .mode-card .mode-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #00fff7;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.5px;
+    }
+    .mode-card .mode-desc {
+      font-size: 0.93rem;
+      color: #d2faff;
+      margin-bottom: 0.1rem;
+      line-height: 1.5;
+    }
+    .mode-card .mode-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.2rem;
+      color: #00fff7;
+      filter: drop-shadow(0 0 6px #00fff7);
+    }
+    .result-block {
+      margin-bottom: 2.5rem;
+      width: 100%;
+      max-width: 900px;
+      margin-left: 0;
+      margin-right: auto;
+      animation: cardPop 0.7s cubic-bezier(.6,-0.28,.74,.05) 1;
+      transition: box-shadow 0.25s;
+    }
+    .result-block.highlight {
+      box-shadow: 0 0 0 4px #00fff7, 0 2px 24px #00fff7;
+      transition: box-shadow 0.25s;
+      z-index: 100;
+    }
+    .result-query {
+      font-size: 1.1rem;
+      color: #5e9fd4;
+      margin-bottom: 0.3em;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+    .answer-card {
+      background: rgba(16,26,35,0.98);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px rgba(0,255,247,0.10), 0 0 0 1.5px #192d3a;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 0 1.5rem 0;
+      padding: 2.2rem 2rem 2rem;
+      z-index: 5;
+      position: relative;
+      min-height: 120px;
+      margin-left: 0;
+      margin-right: auto;
+      text-align: left;
+      color: #e7faff;
+    }
+    .answer-card h2 {
+      color: #00fff7;
+      font-size: 1.3rem;
+      margin-bottom: 1.1rem;
+      text-align: left;
+    }
+    .summary-content {
+      background: #101e2b;
+      border-radius: 14px;
+      padding: 1.2em 1.1em 1.1em 1.6em;
+      margin-bottom: 1.2em;
+      color: #e7faff;
+      font-size: 1.04rem;
+      line-height: 1.35;
+      box-shadow: 0 2px 16px rgba(0,255,247,0.07), 0 0 0 1px #22384a;
+      word-break: break-word;
+    }
+    .summary-content ul,
+    .summary-content ol {
+      margin: 0.4em 0 0.7em 1.1em;
+      padding-left: 1.1em;
+    }
+    .summary-content ul { list-style-type: disc; }
+    .summary-content ol { list-style-type: decimal; }
+    .summary-content li {
+      margin-bottom: 0.22em;
+      font-size: 1.03em;
+      line-height: 1.38;
+      list-style-position: outside;
+    }
+    .summary-content li.compact {
+      margin-bottom: 0;
+      line-height: 1.2;
+    }
+    .summary-content b {
+      color: #00fff7;
+    }
+    .summary-content h2, .summary-content h3, .summary-content h4 {
+      color: #00fff7;
+      margin-top: 1.1em;
+      margin-bottom: 0.5em;
+      font-weight: 700;
+    }
+    .summary-content h2 { font-size: 1.12em; }
+    .summary-content h3 { font-size: 1.06em; }
+    .summary-content h4 { font-size: 1.03em; }
+    .related-block {
+      background: rgba(24, 32, 44, 0.97);
+      border-radius: 16px;
+      box-shadow: 0 0 12px #00fff7, 0 0 2px #5e9fd4;
+      margin: 2.5rem 0 0 0;
+      padding: 1.3rem 1.5rem 1.1rem 1.5rem;
+      max-width: 900px;
+      width: 100%;
+      color: #b0faff;
+      margin-left: 0;
+      margin-right: auto;
+      text-align: left;
+    }
+    .related-block h2 {
+      color: #00fff7;
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+      text-align: left;
+    }
+    .related-list {
+      margin: 0.2em 0 0 0;
+      padding-left: 1.2em;
+      color: #c5eaff;
+      text-align: left;
+      display: inline-block;
+    }
+    .related-list li {
+      margin-bottom: 0.3em;
+      font-size: 1.01em;
+    }
+    .related-link {
+      color: #00fff7;
+      text-decoration: underline;
+    }
+    .related-link:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+    .sources-toggle-btn {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 18px;
+      padding: 0.7em 1.3em;
+      font-size: 1.1em;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      margin-bottom: 1.2em;
+      display: block;
+      margin-left: 0;
+      margin-right: auto;
+    }
+    .sources-toggle-btn:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+    }
+    .sources-container {
+      display: none;
+      margin: 0 0 1.5em 0;
+      max-width: 900px;
+      width: 100%;
+      background: rgba(10,20,30,0.97);
+      border-radius: 16px;
+      box-shadow: 0 0 12px #00fff7, 0 0 2px #5e9fd4;
+      padding: 1.1rem 1.5rem 1.1rem 1.5rem;
+      margin-left: 0;
+      margin-right: auto;
+      text-align: left;
+    }
+    .search-section {
+      position: fixed;
+      left: calc(var(--side-nav-width) + var(--history-width));
+      right: 0;
+      bottom: 20px;
+      width: auto;
+      max-width: 900px;
+      margin: 0 auto;
+      z-index: 999;
+      background: rgba(0,0,0,0.96);
+      padding: 0.5rem 1rem 0.5rem 1rem;
+      box-shadow: 0 -2px 16px rgba(0,255,247,0.10);
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: left var(--transition), width var(--transition);
+    }
+    .search-section.collapsed {
+      left: var(--side-nav-width);
+      width: auto;
+      max-width: 1200px;
+    }
+    .search-box {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      padding: 0.4rem 1.2rem;
+      border-radius: 50px;
+      background: rgba(0, 255, 247, 0.05);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 255, 247, 0.2);
+      box-shadow: 0 0 10px rgba(0, 255, 247, 0.15);
+      transition: all 0.3s ease-in-out;
+      animation: neonGlow 3s infinite alternate;
+      gap: 1rem;
+      position: relative;
+      z-index: 998;
+      flex-wrap: wrap;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    @keyframes neonGlow {
+      0% { box-shadow: 0 0 10px rgba(0,255,247,0.15); }
+      100% { box-shadow: 0 0 25px rgba(0,255,247,0.5); }
+    }
+    .dropup {
+      position: relative;
+      display: inline-block;
+    }
+    .dropup-btn {
+      position: relative;
+      min-width: 120px;
+      user-select: none;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      color: white;
+      border-radius: 30px;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0,255,247,0.3);
+      padding: 0.2rem 1.2rem;
+      box-shadow: 0 0 8px rgba(0,255,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      height: 32px;
+      z-index: 1001;
+    }
+    .dropup-btn:after {
+      content: '';
+      border: 6px solid transparent;
+      border-bottom-color: #00fff7;
+      margin-left: 10px;
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+    .dropup.open .dropup-btn:after {
+      transform: rotate(180deg);
+    }
+    .dropup-menu {
+      display: none;
+      position: absolute;
+      left: 0;
+      bottom: 110%;
+      min-width: 180px;
+      background: rgb(0, 0, 0);
+      border-radius: 18px;
+      box-shadow: 0 4px 32px 0 rgba(0,255,247,0.18), 0 1.5px 8px 0 rgba(0,255,247,0.10);
+      border: 1.5px solid rgba(0,255,247,0.15);
+      z-index: 1002;
+      padding: 0.3rem 0;
+      animation: fadeInUp 0.2s;
+      color: #fff;
+      backdrop-filter: blur(14px);
+    }
+    .dropup.open .dropup-menu {
+      display: block;
+    }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: none; } }
+    .dropup-option {
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      padding: 0.7em 1.2em;
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s, color 0.15s;
+      outline: none;
+      text-align: left;
+    }
+    .dropup-option.selected {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color:rgb(243, 243, 243);
+    }
+    .dropup-option:hover, .dropup-option:focus {
+      background: rgba(255, 255, 255, 0.14);
+      color:rgb(106, 118, 118);
+    }
+    .search-box textarea {
+      flex: 1;
+      padding: 0.4rem 1rem;
+      font-size: 1.08rem;
+      border: none;
+      border-radius: 22px;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-family: 'Poppins';
+      min-width: 0;
+      min-height: 32px;
+      max-height: 70px;
+      resize: none;
+      overflow-y: hidden;
+      line-height: 1.5;
+      box-sizing: border-box;
+      margin-right: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+    }
+    .search-box textarea::placeholder {
+      color: #ccc;
+    }
+    .send-button {
+      background-color: #00fff7;
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(0,255,247,0.5);
+      flex-shrink: 0;
+    }
+    .send-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 14px rgba(0,255,247,0.9);
+    }
+    .send-button svg {
+      width: 20px;
+      height: 20px;
+      fill: black;
+    }
+    .new-search-btn {
+      margin-left: 1.2rem;
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 18px;
+      padding: 0.7em 1.3em;
+      font-size: 1.1em;
+      font-family: 'Montserrat', 'Poppins', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,255,247,0.18);
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      display: flex;
+      align-items: center;
+      height: 38px;
+      display: none;
+    }
+
+.history-list li {
+  position: relative;
+  /* ...existing styles... */
+}
+
+.delete-history-btn {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff3b3b;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.18s;
+  opacity: 0.85;
+}
+.history-list li:hover .delete-history-btn,
+.history-list li:focus .delete-history-btn {
+  display: block;
+}
+.delete-history-btn:hover {
+  background: #ff0000;
+  opacity: 1;
+}
+
+
+    .new-search-btn:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      color: #001f2f;
+      box-shadow: 0 6px 18px #00fff7;
+    }
+    @media (max-width: 1200px) {
+      .center-main { margin-left: 80px; width: calc(100% - 80px);}
+      .history-sidebar, .history-toggle-btn { display: none; }
+      .search-section { left: 80px; }
+    }
+    @media (max-width: 900px) {
+      .main-content-area { max-width: 98vw; }
+      .mode-cards-container { flex-direction: column; align-items: center; gap: 1.1rem;}
+      .mode-card { max-width: 320px; min-width: 140px; width: 95%; }
+      .result-block, .answer-card, .related-block, .sources-container { max-width: 98vw; }
+    }
+    @media (max-width: 700px) {
+      .container { padding-left: 0; }
+      .side-nav { width: 60px; }
+      .side-nav a { font-size: 0.6rem; }
+      .main-content-area, .search-section, .related-block, .sources-container { max-width: 100vw; }
+      .answer-card, .section, .search-section, .related-block, .sources-container { max-width: 100vw; }
+      .dropup-btn {
+        min-width: 90px;
+        font-size: 0.9rem;
+      }
+      .search-box { max-width: 100vw; }
+      .mode-card { padding: 1rem 0.7rem 0.9rem 0.7rem; }
+      .new-search-btn { font-size: 1em; padding: 0.5em 1em; }
+    }
+
+.chat-thread-container {
+  max-width: 700px;
+  margin: 2rem auto 0 auto;
+  background: rgba(0,255,247,0.05);
+  border-radius: 16px;
+  box-shadow: 0 0 8px #00fff7;
+  padding: 1.2rem;
+}
+.chat-messages {
+  min-height: 80px;
+  margin-bottom: 1rem;
+  font-size: 1.05em;
+}
+.chat-message-user {
+  color: #00fff7;
+  margin-bottom: 0.2em;
+  font-weight: 600;
+}
+.chat-message-bot {
+  color: #5e9fd4;
+  margin-bottom: 0.7em;
+}
+.chat-input-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.chat-input {
+  flex: 1;
+  border-radius: 12px;
+  padding: 0.6rem;
+  border: none;
+  font-size: 1em;
+  resize: none;
+  background: #101e2b;
+  color: #fff;
+
+  min-height: 50px;
+  max-height: 500px;
+  overflow-y: auto;
+  resize: none;
+
+}
+.chat-send-btn {
+  background: #00fff7;
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  color: #001f2f;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background 0.18s;
+  box-shadow: 0 2px 8px #00fff7;
+}
+.chat-send-btn:hover {
+  background: #5e9fd4;
+}
+
+.chat-message-bot li {
+  margin-bottom: 0.3em;
+  line-height: 1.3;
+}
+.chat-message-bot ul,
+.chat-message-bot ol {
+  margin-top: 0.3em;
+  margin-bottom: 0.5em;
+  padding-left: 1.2em;
+}
+
+
+#goTopBtn, #goBottomBtn {
+  position: fixed;
+  right: 32px;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 2px 18px rgba(0,255,247,0.18);
+  cursor: pointer;
+  opacity: 0.75;
+  z-index: 1200;
+  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  display: none;
+  padding: 0;
+}
+#goTopBtn:hover, #goBottomBtn:hover {
+  opacity: 1;
+  background: rgba(0,255,247,0.12);
+  transform: scale(1.08);
+}
+#goTopBtn { bottom: 150px; }
+#goBottomBtn { bottom: 96px; }
+#goTopBtn svg, #goBottomBtn svg {
+  display: block;
+  margin: auto;
+}
+@media (max-width: 700px) {
+  #goTopBtn, #goBottomBtn { right: 12px; width: 40px; height: 40px; }
+  #goTopBtn { bottom: 80px; }
+  #goBottomBtn { bottom: 24px; }
+}
+
+.edit-summary-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 22px; /* Increase overall button size */
+}
+.edit-summary-btn .icon {
+  font-size: 1.5em; /* Make icon bigger */
+}
+.edit-summary-btn .label {
+  font-size: 1em;
+}
+
+
+
+.save-summary-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 22px; /* Increase overall button size */
+}
+.save-summary-btn .icon {
+  font-size: 1.5em; /* Make icon bigger */
+}
+.save-summary-btn .label {
+  font-size: 1em;
+}
+
+
+
+  </style>
+</head>
+<body>
+  <canvas id="star-bg-canvas"></canvas>
+ 
+   <div class="side-nav">
+    <a href="/"><img src="https://img.icons8.com/ios-filled/50/home.png"/><span>Home</span></a><br>
+    <a href="/radargpt"><img src="https://img.icons8.com/ios-filled/50/globe.png"/><span>RadarGPT</span></a><br>
+    <a href="/app"><img src="https://img.icons8.com/ios-filled/50/search.png"/><span>FindRadar</span></a><br>
+    <a href="#"><img src="https://img.icons8.com/ios-filled/50/bookmark.png"/><span>Saved</span></a><br>
+    <a href="#"><img src="https://img.icons8.com/ios-filled/50/star.png"/><span>Starred</span></a><br>
+  </div>
+  <div class="history-sidebar" id="history-sidebar">
+    <div class="history-title">History</div>
+    <ul class="history-list" id="history-list"></ul>
+  </div>
+  <button class="history-toggle-btn" id="history-toggle-btn" title="Toggle History Sidebar" aria-label="Toggle History Sidebar">
+    <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+  <div class="center-main" id="center-main">
+    <div class="title-header">RadarGPT</div>
+    <div class="main-content-area" id="main-content-area">
+      <div id="mode-cards" class="mode-cards-container">
+        <div class="mode-card">
+          <div class="mode-icon">🔮</div>
+          <div class="mode-title">Future Pain Radar</div>
+          <div class="mode-desc">
+            Predicts future pain points and unmet needs from real user complaints and trends. Get a market radar for what’s coming next.
+          </div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-icon">🧠</div>
+          <div class="mode-title">Unspoken Problem Miner</div>
+          <div class="mode-desc">
+            Surfaces hidden, emotional, or unspoken problems from replies and reviews. Get product/UX improvement ideas from what users don’t say directly.
+          </div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-icon">🚀</div>
+          <div class="mode-title">Zero to One Generator</div>
+          <div class="mode-desc">
+            Generates bold, radical startup ideas that solve the root problem in a new way. Useful for founders and innovators.
+          </div>
+        </div>
+    
+      </div>
+      <div id="results-history"></div>
+    </div>
+  </div>
+  <div class="search-section" id="search-section">
+    <div class="search-box">
+      <div class="dropup" id="dropup">
+        <div class="dropup-btn" id="dropup-btn" tabindex="0" aria-haspopup="listbox" aria-expanded="false" role="combobox" aria-label="Select Mode">
+          Future Pain Radar
+        </div>
+        <div class="dropup-menu" id="dropup-menu" role="listbox" tabindex="-1">
+          <button class="dropup-option selected" data-value="future_pain" type="button">Future Pain Radar</button>
+          <button class="dropup-option" data-value="unspoken" type="button">Unspoken Problem Miner</button>
+          <button class="dropup-option" data-value="zero_to_one" type="button">Zero to One Generator</button>
+        </div>
+      </div>
+      <textarea placeholder="What problem are you exploring?" id="search-input" aria-label="Search input" rows="1"></textarea>
+      <button class="send-button" id="send-btn" title="Search" aria-label="Search button">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <script>
+    // ... (star background, markdownToHtml, dropup logic unchanged) ...
+const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [], STAR_COUNT = 180;
+    function resize() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+    window.addEventListener('resize', resize); resize();
+    function randomStar() { return { x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3, dx: (Math.random() - 0.5) * 0.08, dy: (Math.random() - 0.5) * 0.08, twinkle: Math.random() * Math.PI * 2 }; }
+    function createStars() { stars = []; for (let i = 0; i < STAR_COUNT; i++) stars.push(randomStar()); }
+    function drawStars() { ctx.clearRect(0, 0, w, h); for (let star of stars) { star.twinkle += 0.03; let opacity = 0.6 + 0.4 * Math.sin(star.twinkle); ctx.save(); ctx.globalAlpha = opacity; ctx.beginPath(); ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6; ctx.fill(); ctx.restore(); star.x += star.dx; star.y += star.dy; if (star.x < 0) star.x = w; if (star.x > w) star.x = 0; if (star.y < 0) star.y = h; if (star.y > h) star.y = 0; } requestAnimationFrame(drawStars);}
+    createStars(); drawStars();
+
+    function markdownToHtml(text) {
+      text = text.replace(/^\s*\*\s*/gm, '- ');
+      text = text.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+      text = text.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+      text = text.replace(/^# (.*)$/gm, '<h2>$1</h2>');
+      text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                 .replace(/__(.*?)__/g, '<b>$1</b>');
+      text = text.replace(/(^|\n)(\d+\..+?)(?=\n[^0-9]|\n$|\n\d+\.)/gs, function(match) {
+        let items = match.trim().split(/\n/).map(x => x.replace(/^\d+\.\s?/, '').trim());
+        if (items.length === 1 && !/^\d+\./.test(match.trim())) return match;
+        let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+        return '<ol>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ol>\n';
+      });
+      text = text.replace(/(^|\n)(-\s.+?)(?=\n[^\-\n]|\n$|\n-\s)/gs, function(match) {
+        let items = match.trim().split(/\n/).map(x => x.replace(/^- /, '').trim());
+        if (items.length === 1 && !/^-\s/.test(match.trim())) return match;
+        let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+        return '<ul>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ul>\n';
+      });
+      text = text.replace(/\*/g, '');
+      text = text.replace(/\n/g, '<br>');
+      return text;
+    }
+
+
+    function markdownToHtmlForChat(text) {
+  text = text.replace(/^\s*\*\s*/gm, '- ');
+  text = text.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  text = text.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  text = text.replace(/^# (.*)$/gm, '<h2>$1</h2>');
+  text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+             .replace(/__(.*?)__/g, '<b>$1</b>');
+
+  text = text.replace(/(^|\n)(\d+\..+?)(?=\n[^0-9]|\n$|\n\d+\.)/gs, function (match) {
+    let items = match.trim().split(/\n/).map(x => x.replace(/^\d+\.\s?/, '').trim());
+    if (items.length === 1 && !/^\d+\./.test(match.trim())) return match;
+    let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+    return '<ol>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ol>';
+  });
+
+  text = text.replace(/(^|\n)(-\s.+?)(?=\n[^\-\n]|\n$|\n-\s)/gs, function (match) {
+    let items = match.trim().split(/\n/).map(x => x.replace(/^- /, '').trim());
+    if (items.length === 1 && !/^-\s/.test(match.trim())) return match;
+    let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+    return '<ul>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ul>';
+  });
+
+  text = text.replace(/\*/g, '');
+  return text; // 🚫 no .replace(/\n/g, '<br>') here!
+}
+
+
+    // Dropup JS logic
+    let selectedValue = 'future_pain';
+    const dropup = document.getElementById('dropup');
+    const dropupBtn = document.getElementById('dropup-btn');
+    const dropupMenu = document.getElementById('dropup-menu');
+    const dropupOptions = dropupMenu.querySelectorAll('.dropup-option');
+
+    dropupBtn.addEventListener('click', function(e) {
+      dropup.classList.toggle('open');
+      dropupBtn.setAttribute('aria-expanded', dropup.classList.contains('open'));
+      if (dropup.classList.contains('open')) dropupMenu.focus();
+    });
+    dropupBtn.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        dropup.classList.toggle('open');
+        dropupBtn.setAttribute('aria-expanded', dropup.classList.contains('open'));
+        if (dropup.classList.contains('open')) dropupMenu.focus();
+      }
+    });
+    dropupMenu.addEventListener('keydown', function(e) {
+      const focused = document.activeElement;
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        (focused.previousElementSibling || dropupMenu.lastElementChild).focus();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        (focused.nextElementSibling || dropupMenu.firstElementChild).focus();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        focused.click();
+      } else if (e.key === 'Escape') {
+        dropup.classList.remove('open');
+        dropupBtn.setAttribute('aria-expanded', false);
+        dropupBtn.focus();
+      }
+    });
+    dropupOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        dropupOptions.forEach(opt => opt.classList.remove('selected'));
+        this.classList.add('selected');
+        selectedValue = this.getAttribute('data-value');
+        dropupBtn.textContent = this.textContent;
+        dropup.classList.remove('open');
+        dropupBtn.setAttribute('aria-expanded', false);
+        dropupBtn.focus();
+      });
+    });
+    document.addEventListener('click', function(e) {
+      if (!dropup.contains(e.target)) {
+        dropup.classList.remove('open');
+        dropupBtn.setAttribute('aria-expanded', false);
+      }
+    });
+    // --- Per-query history logic, persisted in localStorage ---
+    const textarea = document.getElementById('search-input');
+    const resultsHistory = document.getElementById('results-history');
+    const historyList = document.getElementById('history-list');
+    const modeCards = document.getElementById('mode-cards');
+    const historySidebar = document.getElementById('history-sidebar');
+    const historyToggleBtn = document.getElementById('history-toggle-btn');
+    const centerMain = document.getElementById('center-main');
+    const searchSection = document.getElementById('search-section');
+    const LS_KEY = 'radargpt_perquery_history';
+
+    function getQueryHistory() {
+      return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    }
+    function setQueryHistory(arr) {
+      localStorage.setItem(LS_KEY, JSON.stringify(arr));
+    }
+  	// This function adds a new query to the history. It does not limit the history size.
+	function addQueryHistory(entry) {
+	    let history = getQueryHistory();
+	    // Prevent duplicates by filtering out any existing entry with the same ID
+	    history = history.filter(item => item.query_id !== entry.query_id);
+	    // Add the new entry to the beginning of the array
+	    history.unshift(entry);
+	    // Save the updated, unlimited-size history array
+	    setQueryHistory(history);
+	}
+
+    function renderHistorySidebar() {
+      const arr = getQueryHistory();
+      historyList.innerHTML = '';
+      arr.forEach(entry => {
+        const li = document.createElement('li');
+        li.textContent = entry.query;
+        li.title = entry.query;
+        li.tabIndex = 0;
+        li.onclick = (e) => {
+          if (e.target.classList.contains('delete-history-btn')) return;
+          showQueryResult(entry.qid, entry.sourcesId, entry.query_id);
+
+        };
+        li.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { showQueryResult(entry.qid, entry.sourcesId, entry.query_id); }
+        };
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-history-btn';
+        delBtn.title = 'Delete this query';
+        delBtn.innerHTML = '&times;';
+        delBtn.onclick = function(e) {
+          e.stopPropagation();
+          let arr = getQueryHistory();
+          arr = arr.filter(x => x.qid !== entry.qid);
+          setQueryHistory(arr);
+          renderHistorySidebar();
+        };
+        li.appendChild(delBtn);
+        historyList.appendChild(li);
+      });
+    }
+
+    // --- Show sources toggle logic ---
+    function attachSourcesToggle(uniqueId) {
+      const btn = document.getElementById(`showSourcesBtn_${uniqueId}`);
+      const container = document.getElementById(`sources-container_${uniqueId}`);
+      if (!btn || !container) return;
+      btn.onclick = function() {
+        if (container.style.display === "none" || container.style.display === "") {
+          container.style.display = "block";
+          btn.textContent = "Hide Sources";
+        } else {
+          container.style.display = "none";
+          btn.textContent = "Show Sources";
+        }
+      };
+    }
+
+
+
+
+function renderChatThread(query_id) {
+  return `
+    <div class="chat-thread-container" id="chat-thread-${query_id}">
+      <div class="chat-messages" id="chat-messages-${query_id}">
+        <div style="color:#888;">Loading chat...</div>
+      </div>
+      <form class="chat-input-form" id="chat-input-form-${query_id}" autocomplete="off">
+        <textarea class="chat-input" id="chat-input-${query_id}" rows="1" placeholder="Ask a follow-up or chat..."></textarea>
+        <button type="submit" class="chat-send-btn">&#9658;</button>
+      </form>
+    </div>
+  `;
+}
+
+
+function attachChatHandlers(query_id) {
+  const form = document.getElementById(`chat-input-form-${query_id}`);
+  const input = document.getElementById(`chat-input-${query_id}`);
+  const messagesDiv = document.getElementById(`chat-messages-${query_id}`);
+  if (!form || !input || !messagesDiv) return;
+
+  fetch(`/query_api/${query_id}`)
+    .then(res => res.json())
+    .then(data => {
+      const messages = data.chat || [];
+      messagesDiv.innerHTML = messages.length
+        ? messages.map(msg => `<div class="chat-message-${msg.role}"><b>${msg.role === 'user' ? 'You' : 'Bot'}:</b> ${msg.text}</div>`).join('')
+        : '<div style="color:#888;">No follow-up yet. Ask a question below!</div>';
+    });
+
+  form.onsubmit = function(e) {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    messagesDiv.innerHTML += `<div class="chat-message-user"><b>You:</b> ${text}</div>`;
+    // Show typing indicator
+    const typingId = `typing-${Date.now()}`;
+    messagesDiv.innerHTML += `<div class="chat-message-bot" id="${typingId}"><b>Bot:</b> <span class="typing-indicator">typing...</span></div>`;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    input.value = '';
+
+    fetch(`/chat/${query_id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    })
+    .then(res => res.json())
+    .then(data => {
+  const botText = data.bot_reply || "No response.";
+  const typingDiv = document.getElementById(typingId);
+  if (typingDiv) typingDiv.innerHTML = `<b>Bot:</b> ${markdownToHtmlForChat(botText)}`;
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+})
+
+    .catch(err => {
+      const typingDiv = document.getElementById(typingId);
+      if (typingDiv) typingDiv.innerHTML = `<b>Bot:</b> Error: ${err}`;
+    });
+  };
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
+}
+
+
+    // Show the clicked query result (with sources toggle) in the main area and scroll to its top
+  	function showQueryResult(qid, sourcesId, query_id) {
+	  const arr = getQueryHistory();
+	  const q = arr.find(x => x.qid === qid);
+	  if (q && q.html) {
+	    // Restore the entire result HTML, which includes the summary, sources button, and sources container
+	    resultsHistory.innerHTML = q.html;
+		// Re-attach handlers for editing and saving the summary
+	    attachEditSaveHandlers(query_id);
+	
+	    // Re-attach the toggle logic to the restored sources button
+	    attachSourcesToggle(sourcesId);
+	
+	    // Inject the chat thread container if it's not already in the saved HTML
+	    const chatContainer = document.getElementById(`chat-thread-${query_id}`);
+	    if (!chatContainer) {
+	      const chatHtml = renderChatThread(query_id);
+	      resultsHistory.insertAdjacentHTML('beforeend', chatHtml);
+	    }
+	
+	    // Use a timeout to ensure the DOM is updated before attaching chat handlers and scrolling
+	    setTimeout(() => {
+		  // Fetch the chat history and make the chat input work
+	      attachChatHandlers(query_id);
+	
+		  // Highlight the restored result block and scroll to it
+	      const el = document.getElementById(qid);
+	      if (el) {
+	        el.classList.add('highlight');
+	        const rect = el.getBoundingClientRect();
+	        window.scrollTo({ top: window.scrollY + rect.top, behavior: "smooth" });
+	        setTimeout(() => el.classList.remove('highlight'), 1200);
+	      }
+	    }, 0);
+	  }
+	}
+    function hideModeCards() {
+      if (modeCards) modeCards.style.display = 'none';
+    }
+
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 70) + 'px';
+    });
+
+    document.getElementById('send-btn').addEventListener('click', function() {
+      const query = textarea.value.trim();
+      if (!query) return;
+      hideModeCards();
+      const uniqueId = 'result_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+      const sourcesId = uniqueId; // Use same id for sources toggle
+      const loadingHtml = `
+        <div class="result-block" id="${uniqueId}">
+          <div class="result-query">Query: <b>${query}</b></div>
+          <div class="answer-card"><b>Loading...</b></div>
+        </div>
+      `;
+      resultsHistory.innerHTML = loadingHtml;
+
+      fetch('/multi_search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword: query, mode: selectedValue })
+      })
+      .then(res => res.json())
+     .then(data => {
+  const query_id = data.query_id;
+  let html = '';
+
+ if (data.summary) {
+  html += `
+    <div class="answer-card">
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.8rem;">
+  <h2 style="margin: 0; font-size: 1.5rem;">Combined Summary with Citations</h2>
+
+  <button class="save-to-saved-btn" 
+          id="save-to-saved-btn-${query_id}" 
+          title="Save to Saved Results"
+          style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:16px;color:#00fff7;">
+    <span style="font-size: 1.2em;">🔖</span>
+    <span style="font-size: 0.95em; font-family: 'Poppins', 'Montserrat', sans-serif;">Save to Stacks</span>
+  </button>
+</div>
+
+
+  <div class="summary-edit-row" style="display:flex;align-items:flex-start;gap:8px;">
+    <div class="summary-content" 
+         id="summary-${query_id}" 
+         contenteditable="false" 
+         spellcheck="true" 
+         style="outline:2px solid transparent;transition:outline 0.2s;flex:1;">
+      ${markdownToHtml(data.summary)}
+    </div>
+    
+
+
+
+
+    <button class="edit-summary-btn" 
+                id="edit-summary-btn-${query_id}" 
+                title="Edit"
+          <span style="font-size: 0.8em;">✏️</span>
+          <span style="font-size: 0.2em; color: #fff;">Edit</span>
+        </button>
+
+                <button class="save-summary-btn" 
+                id="save-summary-btn-${query_id}" 
+                title="Save"
+          <span style="font-size: 0.8em;">💾</span>
+          <span style="font-size: 0.2em; color: #fff;">Save</span>
+        </button>
+
+      </div>
+    </div>
+  `;
+} else {
+  html += "<div class='answer-card'><i>No summary available.</i></div>";
+}
+
+
+
+  let sourcesHtml = '';
+  if (data.sources) {
+    for (let source of ["Reddit", "Stack Overflow", "ComplaintsBoard", "Product Hunt", "Quora"]) {
+      let posts = data.sources[source] || [];
+      sourcesHtml += `<div class="section source-block"><h2>${source}</h2>`;
+      if (posts.length > 0) {
+        posts.forEach((post, i) => {
+          sourcesHtml += `<div><span class="post-title">${i+1}. ${post.title}</span><br>`;
+          if (post.url) {
+            sourcesHtml += `<a class="post-link" href="${post.url}" target="_blank">${post.url}</a><br>`;
+          }
+          if (post.text) {
+            sourcesHtml += `<div class="post-text">${post.text.replace(/\n/g, "<br>")}</div>`;
+          }
+          sourcesHtml += `</div>`;
+        });
+      } else {
+        sourcesHtml += "<i>No results.</i>";
+      }
+      sourcesHtml += "</div>";
+    }
+  }
+
+  const fullResultHtml = `
+    <div class="result-block" id="${uniqueId}">
+      <div class="result-query">Query: <b>${query}</b></div>
+      ${html}
+      <button class="sources-toggle-btn" id="showSourcesBtn_${sourcesId}">Show Sources</button>
+      <div class="sources-container" id="sources-container_${sourcesId}" style="display:none;">${sourcesHtml}</div>
+    </div>
+  	${renderChatThread(query_id)}
+  `;
+
+  resultsHistory.innerHTML = fullResultHtml;
+
+  attachSourcesToggle(sourcesId);
+  attachChatHandlers(query_id);
+  attachEditSaveHandlers(query_id); // Attach handlers to the new result
+  
+
+  addQueryHistory({
+    qid: uniqueId,
+    query_id: query_id,
+    query,
+    summary: markdownToHtml(data.summary),
+    html: resultsHistory.innerHTML, // Save the full HTML including the chat container
+    sourcesId,
+    sourcesHtml 
+  });
+
+  renderHistorySidebar();
+})
+
+      .catch(err => {
+        resultsHistory.innerHTML = "<div class='answer-card'>Error: " + err + "</div>";
+      });
+    });
+
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('send-btn').click();
+      }
+    });
+
+    historyToggleBtn.addEventListener('click', function() {
+      historySidebar.classList.toggle('collapsed');
+      centerMain.classList.toggle('collapsed');
+      searchSection.classList.toggle('collapsed');
+    });
+
+  	// Initial render on page load
+    renderHistorySidebar();
+    resultsHistory.innerHTML = '';
+
+
+    function attachEditSaveHandlers(query_id) {
+  const editBtn = document.getElementById(`edit-summary-btn-${query_id}`);
+  const saveBtn = document.getElementById(`save-summary-btn-${query_id}`);
+  const saveToSavedBtn = document.getElementById(`save-to-saved-btn-${query_id}`);
+  const summaryDiv = document.getElementById(`summary-${query_id}`);
+
+  if (!editBtn || !saveBtn || !summaryDiv) return;
+  
+   saveBtn.style.display = 'none'; // Hide save button initially
+
+  // ✏️ Edit Button
+  editBtn.onclick = function () {
+    summaryDiv.contentEditable = "true";
+    summaryDiv.style.outline = "2px solid #00fff7";
+    summaryDiv.focus();
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'flex';
+  };
+
+  // 💾 Save Button
+  saveBtn.onclick = function () {
+    summaryDiv.contentEditable = "false";
+    summaryDiv.style.outline = "2px solid transparent";
+    saveBtn.style.display = 'none';
+    editBtn.style.display = 'flex';
+
+
+    const arr = getQueryHistory();
+    const idx = arr.findIndex(x => x.query_id === query_id);
+    if (idx !== -1) {
+      const resultBlock = document.getElementById(arr[idx].qid);
+      if (resultBlock) {
+        // Find the full result container (including the chat thread) to save
+        const fullResultContainer = resultBlock.parentElement;
+        arr[idx].html = fullResultContainer.innerHTML;
+        setQueryHistory(arr);
+      }
+    }
+  };
+
+  // 🔖 Save to Stacks
+  if (saveToSavedBtn) {
+    saveToSavedBtn.onclick = function () {
+      const summaryHTML = summaryDiv.innerHTML;
+
+      const arr = getQueryHistory();
+      const idx = arr.findIndex(x => x.query_id === query_id);
+      const sourcesHtml = idx !== -1 ? arr[idx].sourcesHtml || '' : '';
+      const queryText = idx !== -1 ? arr[idx].query || `Saved Summary (${new Date().toLocaleString()})` : `Saved Summary (${new Date().toLocaleString()})`;
+
+      // This function needs to be defined elsewhere, assuming it exists
+      // saveToSavedCollection(queryText, summaryHTML, saveToSavedBtn, sourcesHtml);
+
+     // Provide user feedback
+     const originalText = saveToSavedBtn.innerHTML;
+     saveToSavedBtn.innerHTML = '<span>✅</span> Saved!';
+     saveToSavedBtn.style.color = '#33ff88';
+     setTimeout(() => {
+        saveToSavedBtn.innerHTML = originalText;
+        saveToSavedBtn.style.color = '#00fff7';
+     }, 2000);
+
+    };
+  }
+}
+
+
+// This logic is for the floating "Ask the bot" button on text selection
+let askBotBtn = null;
+
+function removeAskBotBtn() {
+  if (askBotBtn && askBotBtn.parentNode) {
+    askBotBtn.parentNode.removeChild(askBotBtn);
+    askBotBtn = null;
+  }
+}
+
+document.addEventListener('mouseup', function(e) {
+  setTimeout(() => {
+    removeAskBotBtn();
+    const selection = window.getSelection();
+    const selectedText = selection && selection.toString().trim();
+    if (!selectedText) return;
+
+    let anchorNode = selection.anchorNode;
+    let summary = anchorNode ? (anchorNode.nodeType === 1 ? anchorNode : anchorNode.parentElement).closest('.summary-content') : null;
+    if (!summary) return;
+
+    let range = selection.getRangeAt(0);
+    let rect = range.getBoundingClientRect();
+
+    askBotBtn = document.createElement('button');
+    askBotBtn.textContent = 'Ask the bot';
+    askBotBtn.style.position = 'fixed';
+    askBotBtn.style.top = (rect.bottom + window.scrollY + 8) + 'px'; // account for scroll
+    askBotBtn.style.left = (rect.left + window.scrollX) + 'px'; // account for scroll
+    askBotBtn.style.zIndex = 9999;
+    askBotBtn.style.background = '#00fff7';
+    askBotBtn.style.color = '#001f2f';
+    askBotBtn.style.border = 'none';
+    askBotBtn.style.borderRadius = '16px';
+    askBotBtn.style.padding = '0.4em 1em';
+    askBotBtn.style.boxShadow = '0 2px 8px #00fff7';
+    askBotBtn.style.cursor = 'pointer';
+    askBotBtn.style.fontWeight = 'bold';
+
+    askBotBtn.onclick = function() {
+      let resultBlock = summary.closest('.result-block');
+      let chatInput = null;
+      let chatContainer = null;
+      if (resultBlock) {
+        let next = resultBlock.nextElementSibling;
+        while (next && !next.classList.contains('chat-thread-container')) {
+          next = next.nextElementSibling;
+        }
+        if (next) {
+          chatContainer = next;
+          chatInput = next.querySelector('.chat-input');
+        }
+      }
+      if (chatInput) {
+        chatInput.value = selectedText;
+        chatInput.focus();
+        if (chatContainer) {
+          chatContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+      removeAskBotBtn();
+      window.getSelection().removeAllRanges();
+    };
+
+    document.body.appendChild(askBotBtn);
+  }, 0);
+});
+
+document.addEventListener('mousedown', function(e) {
+  if (askBotBtn && !askBotBtn.contains(e.target)) {
+    removeAskBotBtn();
+  }
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') removeAskBotBtn();
+});
+
+// Auto-expand chat input textareas as you type
+document.addEventListener('input', function (event) {
+	if (event.target.tagName.toLowerCase() !== 'textarea') return;
+    if (event.target.classList.contains('chat-input') || event.target.id === 'search-input') {
+        event.target.style.height = 'auto';
+        const maxHeight = parseInt(window.getComputedStyle(event.target).maxHeight, 10);
+        event.target.style.height = Math.min(event.target.scrollHeight, maxHeight) + 'px';
+    }
+}, false);
+
+
+  </script>
+
+  <button id="goTopBtn" title="Go to Top" aria-label="Go to Top">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="12" fill="#00fff7" opacity="0.15"/>
+    <path d="M12 7l-5 5h3v5h4v-5h3l-5-5z" fill="#00fff7"/>
+  </svg>
+</button>
+<button id="goBottomBtn" title="Go to Bottom" aria-label="Go to Bottom">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="12" fill="#00fff7" opacity="0.15"/>
+    <path d="M12 17l5-5h-3v-5h-4v5h-3l5 5z" fill="#00fff7"/>
+  </svg>
+</button>
+
+
+
+<script>
+const goTopBtn = document.getElementById('goTopBtn');
+const goBottomBtn = document.getElementById('goBottomBtn');
+
+function updateScrollBtns() {
+  const scrollY = window.scrollY || window.pageYOffset;
+  const winH = window.innerHeight;
+  const docH = document.documentElement.scrollHeight;
+  goTopBtn.style.display = scrollY > 100 ? 'block' : 'none';
+  goBottomBtn.style.display = (scrollY + winH < docH - 100) ? 'block' : 'none';
+}
+
+goTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+goBottomBtn.addEventListener('click', () => {
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+});
+
+window.addEventListener('scroll', updateScrollBtns);
+window.addEventListener('resize', updateScrollBtns);
+document.addEventListener('DOMContentLoaded', updateScrollBtns);
+</script>
+<script src="static\radargpt-save-module.js"></script>
+
+</body>
+</html>

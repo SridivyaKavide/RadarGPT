@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Search Engine - Find Problems, Discover Opportunities</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #dc3545;
+            --secondary-color: #6c757d;
+            --accent-color: #fd7e14;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+        }
+
+        .search-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .search-header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-header p {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+
+        .search-form {
+            margin-bottom: 2rem;
+        }
+
+        .search-input-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e9ecef;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .category-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .category-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 25px;
+            background: white;
+            color: var(--secondary-color);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .category-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .spinner-border {
+            color: var(--primary-color);
+        }
+
+        .results-container {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .results-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .results-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .pain-points-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pain-point-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .pain-point-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .pain-point-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .pain-point-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .severity-badge {
+            background: var(--warning-color);
+            color: #333;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .severity-high {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .severity-medium {
+            background: var(--warning-color);
+            color: #333;
+        }
+
+        .severity-low {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .pain-point-description {
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .pain-point-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .quotes-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .quote-item {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            border-left: 3px solid var(--primary-color);
+            font-style: italic;
+        }
+
+        .startup-opportunities-section {
+            margin-bottom: 2rem;
+        }
+
+        .opportunity-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .opportunity-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .validation-score {
+            background: var(--success-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .score-high {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .score-medium {
+            background: var(--warning-color);
+            color: #333;
+        }
+
+        .score-low {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .sources-section {
+            margin-bottom: 2rem;
+        }
+
+        .source-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .source-tab {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .source-tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .source-content {
+            display: none;
+        }
+
+        .source-content.active {
+            display: block;
+        }
+
+        .source-count {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .source-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .source-item:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .source-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .source-item-title {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .source-item-number {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .source-item-content {
+            color: #666;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .source-item-url {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .source-item-url:hover {
+            text-decoration: underline;
+        }
+
+        .note-message {
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .error-message {
+            background: var(--danger-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .success-message {
+            background: var(--success-color);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .search-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            .search-header h1 {
+                font-size: 2rem;
+            }
+
+            .results-stats {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pain-point-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-container">
+            <div class="search-header">
+                <h1><i class="fas fa-search"></i> Pain Search Engine</h1>
+                <p>Find problems, discover opportunities, validate startup ideas</p>
+            </div>
+
+            <form class="search-form" id="searchForm">
+                <div class="search-input-group">
+                    <input type="text" class="search-input" id="searchQuery" 
+                           placeholder="Search for pain points, problems, or frustrations..." 
+                           required>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+
+                <div class="category-selector">
+                    <button type="button" class="category-btn active" data-category="all">
+                        <i class="fas fa-globe"></i> All Categories
+                    </button>
+                    <button type="button" class="category-btn" data-category="health">
+                        <i class="fas fa-heartbeat"></i> Health
+                    </button>
+                    <button type="button" class="category-btn" data-category="productivity">
+                        <i class="fas fa-rocket"></i> Productivity
+                    </button>
+                    <button type="button" class="category-btn" data-category="dev_tools">
+                        <i class="fas fa-code"></i> Dev Tools
+                    </button>
+                    <button type="button" class="category-btn" data-category="finance">
+                        <i class="fas fa-dollar-sign"></i> Finance
+                    </button>
+                </div>
+            </form>
+
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Searching across multiple sources...</p>
+            </div>
+
+            <div class="results-container" id="resultsContainer">
+                <div class="results-header">
+                    <div class="results-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalSources">0</div>
+                            <div class="stat-label">Sources</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalItems">0</div>
+                            <div class="stat-label">Items Found</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="painPoints">0</div>
+                            <div class="stat-label">Pain Points</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="opportunities">0</div>
+                            <div class="stat-label">Opportunities</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pain-points-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Pain Points Identified
+                    </h3>
+                    <div id="painPointsContainer"></div>
+                </div>
+
+                <div class="startup-opportunities-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Startup Opportunities
+                    </h3>
+                    <div id="opportunitiesContainer"></div>
+                </div>
+
+                <div class="sources-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-database"></i>
+                        Source Data
+                    </h3>
+                    <div class="source-tabs">
+                        <div class="source-tab active" data-source="reddit">
+                            <i class="fab fa-reddit"></i> Reddit
+                        </div>
+                        <div class="source-tab" data-source="news">
+                            <i class="fas fa-newspaper"></i> News
+                        </div>
+                        <div class="source-tab" data-source="stackoverflow">
+                            <i class="fab fa-stack-overflow"></i> Stack Overflow
+                        </div>
+                        <div class="source-tab" data-source="complaintsboard">
+                            <i class="fas fa-comments"></i> ComplaintsBoard
+                        </div>
+                    </div>
+                    <div id="sourcesContainer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentCategory = 'all';
+        let searchResults = {};
+
+        // Category selection
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentCategory = this.dataset.category;
+            });
+        });
+
+        // Search form submission
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) return;
+
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/pain-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        category: currentCategory
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    searchResults = data;
+                    displayResults(data);
+                }
+            } catch (error) {
+                showError('An error occurred while searching. Please try again.');
+                console.error('Search error:', error);
+            } finally {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        });
+
+        function displayResults(data) {
+            // Update stats
+            document.getElementById('totalSources').textContent = data.total_sources;
+            document.getElementById('totalItems').textContent = data.total_items;
+            document.getElementById('painPoints').textContent = data.analysis.pain_points?.length || 0;
+            document.getElementById('opportunities').textContent = data.analysis.startup_opportunities?.length || 0;
+
+            // Show note if present
+            if (data.analysis.note) {
+                showNote(data.analysis.note);
+            }
+
+            // Display pain points
+            displayPainPoints(data.analysis.pain_points || []);
+
+            // Display opportunities
+            displayOpportunities(data.analysis.startup_opportunities || []);
+
+            // Display sources
+            displaySources(data.results);
+
+            // Show results
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+
+        function displayPainPoints(painPoints) {
+            const container = document.getElementById('painPointsContainer');
+            container.innerHTML = '';
+
+            if (painPoints.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>No specific pain points found.</strong><br>
+                        This could mean:
+                        <ul class="mt-2">
+                            <li>The search term didn't return enough relevant content</li>
+                            <li>The content found doesn't contain specific problems</li>
+                            <li>Try using different search terms or check the source data below</li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+
+            painPoints.forEach(point => {
+                const card = document.createElement('div');
+                card.className = 'pain-point-card';
+                
+                const severityClass = point.severity >= 8 ? 'severity-high' : point.severity >= 6 ? 'severity-medium' : 'severity-low';
+                
+                card.innerHTML = `
+                    <div class="pain-point-header">
+                        <div>
+                            <div class="pain-point-title">${point.title}</div>
+                        </div>
+                        <span class="severity-badge ${severityClass}">Severity: ${point.severity}/10</span>
+                    </div>
+                    <div class="pain-point-description">${point.description}</div>
+                    <div class="pain-point-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-users"></i>
+                            <span><strong>Users:</strong> ${point.user_segments?.join(', ') || 'General users'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span><strong>Frequency:</strong> ${point.frequency || 'Unknown frequency'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span><strong>Business Impact:</strong> ${point.business_impact || 'Unknown impact'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-fire"></i>
+                            <span><strong>Emotional Intensity:</strong> ${point.emotional_intensity || 'Unknown intensity'}</span>
+                        </div>
+                    </div>
+                    ${point.quotes && point.quotes.length > 0 ? `
+                        <div class="mt-3">
+                            <strong><i class="fas fa-quote-left"></i> User Quotes:</strong>
+                            <ul class="mt-2 quotes-list">
+                                ${point.quotes.map(quote => `<li class="quote-item">"${quote}"</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function displayOpportunities(opportunities) {
+            const container = document.getElementById('opportunitiesContainer');
+            container.innerHTML = '';
+
+            if (opportunities.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>No startup opportunities identified.</strong><br>
+                        This could mean:
+                        <ul class="mt-2">
+                            <li>Insufficient data to identify opportunities</li>
+                            <li>The pain points found don't suggest clear business solutions</li>
+                            <li>Try refining your search terms for more specific problems</li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+
+            opportunities.forEach(opportunity => {
+                const card = document.createElement('div');
+                card.className = 'opportunity-card';
+                
+                const scoreClass = opportunity.validation_score >= 8 ? 'score-high' : opportunity.validation_score >= 6 ? 'score-medium' : 'score-low';
+                
+                card.innerHTML = `
+                    <div class="pain-point-header">
+                        <div>
+                            <div class="opportunity-title">${opportunity.idea}</div>
+                        </div>
+                        <span class="validation-score ${scoreClass}">Score: ${opportunity.validation_score}/10</span>
+                    </div>
+                    <div class="pain-point-description">
+                        <strong>Value Proposition:</strong> ${opportunity.value_proposition}
+                    </div>
+                    <div class="pain-point-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-users"></i>
+                            <span><strong>Target Users:</strong> ${opportunity.target_users?.join(', ') || 'General users'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span><strong>Urgency:</strong> ${opportunity.urgency || 'Unknown urgency'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function displaySources(results) {
+            const container = document.getElementById('sourcesContainer');
+            container.innerHTML = '';
+
+            const sources = ['reddit', 'news', 'stackoverflow', 'complaintsboard'];
+            
+            sources.forEach(source => {
+                const sourceData = results[source] || [];
+                const sourceContent = document.createElement('div');
+                sourceContent.className = `source-content ${source === 'reddit' ? 'active' : ''}`;
+                sourceContent.id = `${source}Content`;
+                
+                if (sourceData.length === 0) {
+                    sourceContent.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>No ${source} results found.</strong><br>
+                            This source may be temporarily unavailable or the search term didn't match any content.
+                        </div>
+                    `;
+                } else {
+                    sourceContent.innerHTML = `<div class="source-count">Found ${sourceData.length} items from ${source}</div>`;
+                    
+                    sourceData.forEach((item, index) => {
+                        const sourceItem = document.createElement('div');
+                        sourceItem.className = 'source-item';
+                        
+                        const title = item.title || item.selftext || 'No title';
+                        const url = item.url || item.link || '#';
+                        const content = item.content || item.selftext || item.description || '';
+                        
+                        sourceItem.innerHTML = `
+                            <div class="source-item-header">
+                                <div class="source-item-title">${title}</div>
+                                <span class="source-item-number">#${index + 1}</span>
+                            </div>
+                            ${content ? `<div class="source-item-content">${content.substring(0, 200)}${content.length > 200 ? '...' : ''}</div>` : ''}
+                            <a href="${url}" target="_blank" class="source-item-url">
+                                <i class="fas fa-external-link-alt"></i> View Source
+                            </a>
+                        `;
+                        sourceContent.appendChild(sourceItem);
+                    });
+                }
+                
+                container.appendChild(sourceContent);
+            });
+
+            // Source tab switching
+            document.querySelectorAll('.source-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const source = this.dataset.source;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.source-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`${source}Content`).classList.add('active');
+                });
+            });
+        }
+
+        function showNote(message) {
+            const noteDiv = document.createElement('div');
+            noteDiv.className = 'alert alert-info note-message';
+            noteDiv.innerHTML = `<i class="fas fa-info-circle"></i> <strong>Note:</strong> ${message}`;
+            
+            document.querySelector('.search-container').insertBefore(
+                noteDiv, 
+                document.getElementById('resultsContainer')
+            );
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            
+            document.querySelector('.search-container').insertBefore(
+                errorDiv, 
+                document.getElementById('resultsContainer')
+            );
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            
+            document.querySelector('.search-container').insertBefore(
+                successDiv, 
+                document.getElementById('resultsContainer')
+            );
+            
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html> 

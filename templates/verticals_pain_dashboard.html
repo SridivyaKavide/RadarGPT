@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verticals & Pain Dashboard Integration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+
+
+:root {
+      --side-nav-width: 80px;
+      
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #0b0c10;
+      color: #fff;
+      font-family: 'Montserrat', sans-serif;
+      width: 100vw;
+      overflow: hidden;
+    }
+    .toggle-bar {
+      position: fixed;
+      top: 24px;
+      right: 32px;
+      z-index: 20;
+      background: rgba(18, 22, 28, 0.98);
+      border-radius: 999px;
+      box-shadow: 0 4px 32px 0 rgba(0,255,247,0.10);
+      display: flex;
+      align-items: center;
+      padding: 4px 6px;
+      gap: 2px;
+      border: 1.5px solid #1a2a36;
+      min-width: 0;
+      min-height: 32px;
+    }
+    .toggle-btn {
+      background: none;
+      color: #b0faff;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.18s, color 0.18s;
+      margin: 0 1px;
+      letter-spacing: 0.01em;
+      position: relative;
+    }
+    .toggle-btn.active {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      box-shadow: 0 2px 12px #00fff7;
+      z-index: 1;
+    }
+    .toggle-btn:not(.active):hover {
+      background: rgba(0,255,247,0.08);
+      color: #fff;
+    }
+    .iframe-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0b0c10;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .iframe-container iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      background: #fff;
+      border-radius: 0;
+      display: block;
+    }
+    @media (max-width: 600px) {
+      .toggle-bar { top: 10px; right: 8px; min-width: 0; min-height: 28px; }
+      .toggle-btn { font-size: 0.85rem; padding: 3px 8px; }
+      .iframe-container iframe { height: 100vh; }
+    }
+
+.side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.7rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+
+  </style>
+</head>
+<body>
+
+
+    <div class="side-nav">
+
+      <div class="side-nav">
+        <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+          <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+          <span>RadarGPT</span>
+        </a><br>
+      
+        <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+          <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+          <span>Verticals</span>
+        </a><br>
+      
+        <a href="/pain-cloud-combined" title="Pain-cloud">
+          <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+          <span>Insights</span>
+        </a><br>
+      
+        <a href="/live-trends" title="Live Trends" class="auth-link">
+          <img src="https://img.icons8.com/ios-filled/50/news.png" alt="Live Trends"/>
+          <span>Trends</span>
+        </a><br>
+      
+        <a href="/saved" title="Saved">
+          <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+          <span>Saved</span>
+        </a><br>
+
+        <a href="/pricing" title="Saved">
+          <img src="https://img.icons8.com/ios-filled/50/price-tag.png" alt="Account"/>
+          <span>Pricing</span>
+        </a><br>
+        
+        
+      </div>
+
+
+
+
+  <div class="toggle-bar">
+    <button id="btn-verticals" class="toggle-btn active">Verticals</button>
+    <button id="btn-pain" class="toggle-btn">Pain Dashboard</button>
+  </div>
+  <div class="iframe-container">
+    <iframe id="main-iframe" src="/verticals"></iframe>
+  </div>
+  <script>
+    const btnVerticals = document.getElementById('btn-verticals');
+    const btnPain = document.getElementById('btn-pain');
+    const iframe = document.getElementById('main-iframe');
+    btnVerticals.onclick = function() {
+      iframe.src = '/verticals';
+      btnVerticals.classList.add('active');
+      btnPain.classList.remove('active');
+    };
+    btnPain.onclick = function() {
+      iframe.src = '/pain-dashboard';
+      btnPain.classList.add('active');
+      btnVerticals.classList.remove('active');
+    };
+  </script>
+</body>
+</html>

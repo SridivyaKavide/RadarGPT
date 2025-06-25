@@ -1,0 +1,5 @@
+{
+    "amazonQ.telemetry": true,
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "editor.experimental.preferTreeSitter.typescript": false
+}

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PainRadar Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .title-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .title-header h1 {
+            margin: 0;
+            font-size: 2em;
+            background: linear-gradient(45deg, #00fff7, #b0faff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .persona-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .persona-filter select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .persona-filter select:focus {
+            outline: none;
+            border-color: #00fff7;
+        }
+
+        .time-filter {
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-filter button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .time-filter button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .time-filter button.active {
+            background: #00fff7;
+            color: #000;
+            border-color: #00fff7;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .insight-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 255, 247, 0.1);
+        }
+
+        .insight-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #b0faff;
+        }
+
+        .metric {
+            font-size: 2em;
+            font-weight: 600;
+            color: #00fff7;
+            margin-bottom: 5px;
+        }
+
+        .sub-metric {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+        }
+
+        .chart-container h3 {
+            margin: 0 0 20px 0;
+            color: #b0faff;
+        }
+
+        .trends-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .trend-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .trend-container h3 {
+            margin: 0 0 20px 0;
+            color: #b0faff;
+        }
+
+        .trend-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .trend-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .trend-item:last-child {
+            border-bottom: none;
+        }
+
+        .trend-info {
+            flex: 1;
+        }
+
+        .trend-keyword {
+            font-weight: 500;
+            color: #00fff7;
+        }
+
+        .trend-date {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .trend-metrics {
+            display: flex;
+            gap: 16px;
+            font-size: 0.9em;
+            color: #b0faff;
+        }
+
+        .metric-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #00fff7;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .trends-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .title-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .time-filter {
+                justify-content: center;
+            }
+        }
+
+        .trending-section {
+            display: flex;
+            gap: 2rem;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+        .trending-card {
+            background: #181c24;
+            border-radius: 1rem;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+            padding: 2rem 1.5rem;
+            min-width: 300px;
+            color: #fff;
+        }
+        .trending-card h2 {
+            color: #00fff7;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        .trending-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .trending-card li {
+            font-size: 1.1rem;
+            margin-bottom: 0.7rem;
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.5rem;
+            background: #23283a;
+            color: #b0faff;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+        .trending-card li .trend-count {
+            color: #00fff7;
+            font-weight: bold;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="title-header">
+            <h1>PainRadar Analytics Dashboard</h1>
+            <div class="controls">
+                <div class="persona-filter">
+                    <label for="persona-select">View as:</label>
+                    <select id="persona-select" onchange="updatePersona(this.value)">
+                        <option value="all">All Users</option>
+                        <option value="founder">Founder</option>
+                        <option value="product">Product Manager</option>
+                        <option value="vc">VC/Investor</option>
+                    </select>
+                </div>
+                <div class="time-filter">
+                    <button onclick="updatePeriod('7d')" class="active">7D</button>
+                    <button onclick="updatePeriod('30d')">30D</button>
+                    <button onclick="updatePeriod('90d')">90D</button>
+                    <button onclick="updatePeriod('1y')">1Y</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="trending-section">
+            <div class="trending-card">
+                <h2>Trending in PainRadar</h2>
+                <ul id="trending-in-app"></ul>
+            </div>
+            <div class="trending-card">
+                <h2>Trending on Reddit & Stack Overflow</h2>
+                <ul id="trending-external"></ul>
+            </div>
+        </div>
+
+        <div class="insights-grid">
+            <!-- All insight cards removed as per user request -->
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Top Keywords</h3>
+                <canvas id="keywordsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="trends-grid">
+            <div class="trend-container">
+                <h3>Keyword Trends</h3>
+                <div class="trend-list" id="keyword-trends"></div>
+            </div>
+            <div class="trend-container">
+                <h3>Recent Searches</h3>
+                <div class="trend-list" id="recent-searches"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPeriod = '7d';
+        let currentPersona = 'all';
+        let keywordsChart = null;
+
+        function updatePeriod(period) {
+            currentPeriod = period;
+            document.querySelectorAll('.time-filter button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === period);
+            });
+            fetchAnalytics();
+        }
+
+        function updatePersona(persona) {
+            currentPersona = persona;
+            fetchAnalytics();
+        }
+
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch(`/api/analytics?period=${currentPeriod}&persona=${currentPersona}`, {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Error fetching analytics:', error);
+                document.querySelectorAll('.insight-card .metric').forEach(el => {
+                    el.textContent = 'Error';
+                });
+            }
+        }
+
+        function updateDashboard(data) {
+            // Remove all metrics update code for total searches, active users, avg searches, engagement rate, and success rate
+            // Only update charts and trend lists as needed
+            // Update charts
+            updateKeywordsChart(data.top_keywords);
+            
+            // Update trend lists
+            updateKeywordTrends(data.keyword_trends);
+            updateRecentSearches(data.recent_searches);
+
+            // Trending in app
+            const trendingInApp = data.trending_in_app || [];
+            const trendingInAppList = document.getElementById('trending-in-app');
+            trendingInAppList.innerHTML = trendingInApp.length
+                ? trendingInApp.map(item => `<li>${item.keyword}<span class="trend-count">${item.count}</span></li>`).join('')
+                : '<li>No trending keywords found.</li>';
+
+            // Trending external
+            const trendingExternal = data.trending_external || [];
+            const trendingExternalList = document.getElementById('trending-external');
+            if (trendingExternal.length > 0 && trendingExternal[0].error) {
+                console.error("Error fetching external trends:", trendingExternal[0].error);
+                trendingExternalList.innerHTML = '<li>Error fetching external trends (check console for details).</li>';
+            } else {
+                trendingExternalList.innerHTML = trendingExternal.length
+                    ? trendingExternal.map(item => `<li>${item.keyword}<span class="trend-count">${item.count || ''}</span></li>`).join('')
+                    : '<li>No external trends found.</li>';
+            }
+        }
+
+        function updateKeywordsChart(data) {
+            const ctx = document.getElementById('keywordsChart').getContext('2d');
+            
+            if (keywordsChart) {
+                keywordsChart.destroy();
+            }
+            
+            keywordsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.keyword),
+                    datasets: [{
+                        label: 'Search Count',
+                        data: data.map(d => d.count),
+                        backgroundColor: '#00fff7',
+                        borderRadius: 4
+                    }, {
+                        label: 'Unique Users',
+                        data: data.map(d => d.unique_users),
+                        backgroundColor: '#b0faff',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateKeywordTrends(trends) {
+            const container = document.getElementById('keyword-trends');
+            container.innerHTML = trends.map(trend => `
+                <div class="trend-item">
+                    <div class="trend-info">
+                        <div class="trend-keyword">${trend.keyword}</div>
+                        <div class="trend-date">${trend.date}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateRecentSearches(searches) {
+            const container = document.getElementById('recent-searches');
+            container.innerHTML = searches.map(search => `
+                <div class="trend-item">
+                    <div class="trend-info">
+                        <div class="trend-keyword">${search.keyword}</div>
+                        <div class="trend-date">${search.timestamp}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAnalytics();
+            // Update every 5 minutes
+            setInterval(fetchAnalytics, 300000);
+        });
+    </script>
+</body>
+</html> 

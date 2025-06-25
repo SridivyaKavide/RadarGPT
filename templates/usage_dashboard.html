@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Dashboard - RadarGPT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --side-nav-width: 80px;
+            --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html, body {
+            height: 100%;
+            background: #000;
+            color: white;
+            font-family: 'Poppins', 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        #star-bg-canvas {
+            position: fixed;
+            top: 0; 
+            left: 0;
+            width: 100vw; 
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--side-nav-width);
+            height: 100vh;
+            background-color: #0b1c26;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 1.2rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+        }
+        
+        .side-nav a {
+            text-align: center;
+            color: #b0faff;
+            font-size: 0.7rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0px;
+            transition: all 0.3s ease;
+        }
+        
+        .side-nav a:hover {
+            color: #00fff7;
+            transform: scale(1.05);
+        }
+        
+        .side-nav img {
+            width: 20px;
+            height: 20px;
+            filter: brightness(0) invert(1);
+        }
+        
+        .main-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            margin-left: var(--side-nav-width);
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #00fff7;
+            letter-spacing: 2px;
+            font-family: 'Montserrat', 'Poppins', sans-serif;
+            background: linear-gradient(90deg, #00fff7, #5e9fd4, #00fff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 247, 0.2);
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            color: #e7faff;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-card {
+            background: rgba(0,255,247,0.13);
+            border: 1.5px solid rgba(0,255,247,0.23);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 18px rgba(0,255,247,0.10);
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 32px rgba(0,255,247,0.2);
+            background: rgba(0,255,247,0.18);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header i {
+            color: #00fff7;
+            font-size: 1.5rem;
+        }
+        
+        .card-header h3 {
+            color: #00fff7;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .subscription-info {
+            background: linear-gradient(135deg, rgba(0,255,247,0.2), rgba(94,159,212,0.2));
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .plan-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #00fff7, #5e9fd4);
+            color: #001f2f;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+        
+        .plan-details {
+            color: #e7faff;
+            font-size: 0.9rem;
+        }
+        
+        .plan-details p {
+            margin-bottom: 0.5rem;
+        }
+        
+        .usage-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric-item {
+            background: rgba(20,20,20,0.45);
+            border: 1.5px solid rgba(0,255,247,0.15);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00fff7;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            color: #b0faff;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0,255,247,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00fff7, #5e9fd4);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .usage-modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .module-card {
+            background: rgba(20,20,20,0.45);
+            border: 1.5px solid rgba(0,255,247,0.15);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .module-icon {
+            color: #00fff7;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .module-name {
+            color: #e7faff;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .module-usage {
+            color: #b0faff;
+            font-size: 0.9rem;
+        }
+        
+        .activity-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem;
+            border-bottom: 1px solid rgba(0,255,247,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .activity-item:hover {
+            background: rgba(0,255,247,0.05);
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            color: #00fff7;
+            font-size: 1rem;
+        }
+        
+        .activity-details {
+            flex: 1;
+        }
+        
+        .activity-action {
+            color: #e7faff;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+        
+        .activity-time {
+            color: #b0faff;
+            font-size: 0.8rem;
+        }
+        
+        .upgrade-section {
+            background: linear-gradient(135deg, rgba(0,255,247,0.15), rgba(94,159,212,0.15));
+            border: 1.5px solid rgba(0,255,247,0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .upgrade-section h3 {
+            color: #00fff7;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .upgrade-section p {
+            color: #e7faff;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upgrade-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .upgrade-btn {
+            background: linear-gradient(90deg, #00fff7, #5e9fd4);
+            color: #001f2f;
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem 1.5rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .upgrade-btn:hover {
+            background: linear-gradient(90deg, #5e9fd4, #00fff7);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,255,247,0.3);
+        }
+        
+        .upgrade-btn.secondary {
+            background: rgba(20,20,20,0.45);
+            color: #00fff7;
+            border: 1.5px solid rgba(0,255,247,0.15);
+        }
+        
+        .upgrade-btn.secondary:hover {
+            background: rgba(20,20,20,0.75);
+            border-color: #00fff7;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .side-nav {
+                display: none;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .usage-metrics {
+                grid-template-columns: 1fr;
+            }
+            
+            .upgrade-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="star-bg-canvas"></canvas>
+    
+    <!-- Side Navigation -->
+    <div class="side-nav">
+        <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+            <span>RadarGPT</span>
+        </a><br>
+       
+        <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+            <span>Verticals</span>
+        </a><br>
+       
+        <a href="/pain-cloud-combined" title="Pain-cloud">
+            <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+            <span>Insights</span>
+        </a><br>
+       
+        <a href="/live-trends" title="Live Trends" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/news.png" alt="Live Trends"/>
+            <span>Trends</span>
+        </a><br>
+       
+        <a href="/pricing" title="Pricing">
+            <img src="https://img.icons8.com/ios-filled/50/price-tag.png" alt="Pricing"/>
+            <span>Pricing</span>
+        </a><br>
+       
+        <a href="/usage-dashboard" title="Usage" style="color: #00fff7;">
+            <img src="https://img.icons8.com/ios-filled/50/dashboard.png" alt="Usage"/>
+            <span>Usage</span>
+        </a><br>
+       
+        <a href="/saved" title="Saved">
+            <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+            <span>Saved</span>
+        </a><br>
+    </div>
+    
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Usage Dashboard</h1>
+            <p>Track your usage, manage your plan, and monitor your activity across all RadarGPT modules.</p>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Subscription & Usage Overview -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <i class="fas fa-user-circle"></i>
+                    <h3>Subscription & Usage</h3>
+                </div>
+                
+                <div class="subscription-info">
+                    <div class="plan-badge" id="planBadge">Free Plan</div>
+                    <div class="plan-details">
+                        <p><strong>Status:</strong> <span id="planStatus">Active</span></p>
+                        <p><strong>Started:</strong> <span id="planStartDate">-</span></p>
+                        <p><strong>Next billing:</strong> <span id="planEndDate">-</span></p>
+                    </div>
+                </div>
+                
+                <div class="usage-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value" id="totalUsage">0</div>
+                        <div class="metric-label">Total Usage</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="totalProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" id="remainingUsage">∞</div>
+                        <div class="metric-label">Remaining</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Usage Chart -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-area"></i>
+                    <h3>Daily Usage (Last 30 Days)</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="dailyUsageChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Usage -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <i class="fas fa-cubes"></i>
+                <h3>Module Usage</h3>
+            </div>
+            
+            <div class="usage-modules" id="moduleUsage">
+                <!-- Module cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <i class="fas fa-history"></i>
+                <h3>Recent Activity</h3>
+            </div>
+            
+            <div class="activity-list" id="recentActivity">
+                <!-- Activity items will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Upgrade Section -->
+        <div class="upgrade-section" id="upgradeSection" style="display: none;">
+            <h3><i class="fas fa-rocket"></i> Upgrade Your Plan</h3>
+            <p>You're approaching your usage limits. Upgrade to Pro for unlimited access to all features.</p>
+            <div class="upgrade-buttons">
+                <form action="/create-checkout-session" method="POST">
+                    <button type="submit" class="btn btn-primary">Upgrade to Pro (Stripe)</button>
+                </form>
+                <button id="rzp-button1" class="btn btn-success">Pay with UPI / Card (Razorpay)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Starfield background
+        const canvas = document.getElementById('star-bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let w = window.innerWidth, h = window.innerHeight;
+        let stars = [];
+        const STAR_COUNT = 180;
+        
+        function resize() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w;
+            canvas.height = h;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+        
+        function randomStar() {
+            return {
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 1.2 + 0.3,
+                dx: (Math.random() - 0.5) * 0.08,
+                dy: (Math.random() - 0.5) * 0.08,
+                twinkle: Math.random() * Math.PI * 2
+            };
+        }
+        
+        function createStars() {
+            stars = [];
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push(randomStar());
+            }
+        }
+        
+        createStars();
+        
+        function drawStars() {
+            ctx.clearRect(0, 0, w, h);
+            for (let i = 0; i < stars.length; i++) {
+                let star = stars[i];
+                star.twinkle += 0.03 + Math.random() * 0.02;
+                let opacity = 0.6 + 0.4 * Math.sin(star.twinkle);
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI);
+                ctx.fillStyle = "#fff";
+                ctx.shadowColor = "#fff";
+                ctx.shadowBlur = 6;
+                ctx.fill();
+                ctx.restore();
+                star.x += star.dx;
+                star.y += star.dy;
+                if (star.x < 0) star.x = w;
+                if (star.x > w) star.x = 0;
+                if (star.y < 0) star.y = h;
+                if (star.y > h) star.y = 0;
+            }
+            requestAnimationFrame(drawStars);
+        }
+        
+        drawStars();
+        
+        window.addEventListener('resize', () => {
+            resize();
+            createStars();
+        });
+
+        // Usage Dashboard Functions
+        let dailyUsageChart = null;
+
+        function loadUsageStats() {
+            fetch('/api/usage-stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error loading usage stats:', data.error);
+                        return;
+                    }
+                    
+                    updateSubscriptionInfo(data.subscription);
+                    updateUsageMetrics(data.monthly_usage, data.usage_percentages, data.plan_limits);
+                    updateModuleUsage(data.monthly_usage, data.plan_limits);
+                    updateRecentActivity(data.recent_activity);
+                    updateDailyChart(data.daily_usage);
+                    checkUpgradeNeeded(data.usage_percentages);
+                })
+                .catch(error => {
+                    console.error('Error loading usage stats:', error);
+                });
+        }
+
+        function updateSubscriptionInfo(subscription) {
+            document.getElementById('planBadge').textContent = subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1) + ' Plan';
+            document.getElementById('planStatus').textContent = subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1);
+            document.getElementById('planStartDate').textContent = subscription.start_date;
+            document.getElementById('planEndDate').textContent = subscription.end_date || 'N/A';
+        }
+
+        function updateUsageMetrics(monthlyUsage, usagePercentages, planLimits) {
+            const totalUsage = Object.values(monthlyUsage).reduce((sum, usage) => sum + usage, 0);
+            const totalLimit = Object.values(planLimits).reduce((sum, limit) => {
+                return sum + (limit === Infinity ? 0 : limit);
+            }, 0);
+            
+            document.getElementById('totalUsage').textContent = totalUsage;
+            
+            if (totalLimit > 0) {
+                const percentage = Math.min(100, (totalUsage / totalLimit) * 100);
+                document.getElementById('totalProgress').style.width = percentage + '%';
+                document.getElementById('remainingUsage').textContent = Math.max(0, totalLimit - totalUsage);
+            } else {
+                document.getElementById('totalProgress').style.width = '0%';
+                document.getElementById('remainingUsage').textContent = '∞';
+            }
+        }
+
+        function updateModuleUsage(monthlyUsage, planLimits) {
+            const modules = {
+                'radargpt': { name: 'RadarGPT', icon: 'fas fa-search' },
+                'verticals': { name: 'Verticals', icon: 'fas fa-building' },
+                'insights': { name: 'Insights', icon: 'fas fa-chart-line' },
+                'trends': { name: 'Trends', icon: 'fas fa-newspaper' },
+                'exports': { name: 'Exports', icon: 'fas fa-download' }
+            };
+            
+            const container = document.getElementById('moduleUsage');
+            container.innerHTML = '';
+            
+            Object.entries(modules).forEach(([moduleKey, moduleInfo]) => {
+                const usage = monthlyUsage[moduleKey] || 0;
+                const limit = planLimits[moduleKey] || 0;
+                const isUnlimited = limit === Infinity;
+                
+                const card = document.createElement('div');
+                card.className = 'module-card';
+                card.innerHTML = `
+                    <div class="module-icon">
+                        <i class="${moduleInfo.icon}"></i>
+                    </div>
+                    <div class="module-name">${moduleInfo.name}</div>
+                    <div class="module-usage">
+                        ${usage}${isUnlimited ? '' : '/' + limit}
+                    </div>
+                    ${!isUnlimited ? `
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${Math.min(100, (usage / limit) * 100)}%"></div>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = '';
+            
+            if (activities.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #b0faff; padding: 2rem;">No recent activity</div>';
+                return;
+            }
+            
+            activities.forEach(activity => {
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                item.innerHTML = `
+                    <div class="activity-icon">
+                        <i class="fas fa-${getActivityIcon(activity.module)}"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-action">${activity.action} in ${activity.module}</div>
+                        <div class="activity-time">${activity.date}</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function getActivityIcon(module) {
+            const icons = {
+                'radargpt': 'search',
+                'verticals': 'building',
+                'insights': 'chart-line',
+                'trends': 'newspaper',
+                'exports': 'download'
+            };
+            return icons[module] || 'circle';
+        }
+
+        function updateDailyChart(dailyData) {
+            const ctx = document.getElementById('dailyUsageChart').getContext('2d');
+            
+            if (dailyUsageChart) {
+                dailyUsageChart.destroy();
+            }
+            
+            const labels = dailyData.map(item => item.date);
+            const data = dailyData.map(item => item.usage);
+            
+            dailyUsageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Usage',
+                        data: data,
+                        borderColor: '#00fff7',
+                        backgroundColor: 'rgba(0, 255, 247, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e7faff'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#b0faff'
+                            },
+                            grid: {
+                                color: 'rgba(0, 255, 247, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#b0faff'
+                            },
+                            grid: {
+                                color: 'rgba(0, 255, 247, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function checkUpgradeNeeded(usagePercentages) {
+            const highUsage = Object.values(usagePercentages).some(percentage => percentage > 80);
+            const upgradeSection = document.getElementById('upgradeSection');
+            
+            if (highUsage) {
+                upgradeSection.style.display = 'block';
+            } else {
+                upgradeSection.style.display = 'none';
+            }
+        }
+
+        function upgradePlan(planType) {
+            fetch('/api/upgrade-plan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    plan_type: planType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully upgraded to ${planType} plan!`);
+                    loadUsageStats(); // Reload stats
+                } else {
+                    alert('Error upgrading plan: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error upgrading plan:', error);
+                alert('Error upgrading plan. Please try again.');
+            });
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsageStats();
+            
+            // Refresh stats every 5 minutes
+            setInterval(loadUsageStats, 300000);
+        });
+
+        document.getElementById('rzp-button1').onclick = function(e){
+            fetch('/create-razorpay-order', {method: 'POST'})
+              .then(res => res.json())
+              .then(data => {
+                var options = {
+                    "key": data.razorpay_key_id,
+                    "amount": data.amount,
+                    "currency": data.currency,
+                    "name": "Your App Name",
+                    "description": "Pro Plan",
+                    "order_id": data.order_id,
+                    "handler": function (response){
+                        window.location.href = '/razorpay-success?order_id=' + response.razorpay_order_id + '&payment_id=' + response.razorpay_payment_id;
+                    },
+                    "prefill": {
+                        "email": data.user_email
+                    },
+                    "theme": {"color": "#3399cc"}
+                };
+                var rzp1 = new Razorpay(options);
+                rzp1.open();
+              });
+            e.preventDefault();
+        }
+    </script>
+</body>
+</html> 

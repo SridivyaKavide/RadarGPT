@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Integrations - PainRadar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    html, body {
+      min-height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+    .center-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin-left: var(--side-nav-width);
+      padding-bottom: 120px;
+      width: calc(100% - var(--side-nav-width));
+      transition: margin-left var(--transition), width var(--transition);
+    }
+    .title-header {
+      font-size: 2.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg,#fff,#aaa,#fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+      margin-top: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+    .main-content-area {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: min-height 0.3s;
+    }
+    .integrations-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      width: 100%;
+    }
+    .integration-card {
+      background: rgba(16,26,35,0.98);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px rgba(0,255,247,0.10), 0 0 0 1.5px #192d3a;
+      padding: 1.5rem;
+      width: calc(50% - 1rem);
+      min-width: 300px;
+      transition: all 0.3s;
+    }
+    .integration-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 30px rgba(0,255,247,0.20), 0 0 0 1.5px #00fff7;
+    }
+    .integration-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .integration-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      background: linear-gradient(135deg, #101e2b, #152a3d);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .integration-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #00fff7;
+    }
+    .integration-description {
+      color: #e7faff;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .integration-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .status-indicator.connected {
+      background: #00ff00;
+      box-shadow: 0 0 10px rgba(0,255,0,0.5);
+    }
+    .status-indicator.disconnected {
+      background: #ff0000;
+      box-shadow: 0 0 10px rgba(255,0,0,0.5);
+    }
+    .status-text {
+      font-size: 0.9rem;
+    }
+    .status-text.connected {
+      color: #00ff00;
+    }
+    .status-text.disconnected {
+      color: #ff0000;
+    }
+    .integration-button {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .integration-button:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+      box-shadow: 0 0 10px rgba(0, 255, 247, 0.5);
+    }
+    .integration-button.disconnect {
+      background: linear-gradient(90deg,#ff3b3b,#ff7b7b);
+    }
+    .integration-button.disconnect:hover {
+      background: linear-gradient(90deg,#ff7b7b,#ff3b3b);
+      box-shadow: 0 0 10px rgba(255, 59, 59, 0.5);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #0b1c26;
+      border-radius: 18px;
+      box-shadow: 0 0 20px rgba(0, 255, 247, 0.3);
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-title {
+      color: #00fff7;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .form-label {
+      color: #b0faff;
+    }
+    .form-input {
+      padding: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 247, 0.3);
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+    }
+    .form-submit {
+      background: linear-gradient(90deg,#00fff7,#5e9fd4);
+      color: #001f2f;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8rem;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .form-submit:hover {
+      background: linear-gradient(90deg,#5e9fd4,#00fff7);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="star-bg-canvas"></canvas>
+ 
+  <div class="side-nav">
+    <a href="/"><img src="https://img.icons8.com/ios-filled/50/home.png"/><span>Home</span></a><br>
+    <a href="/radargpt"><img src="https://img.icons8.com/ios-filled/50/globe.png"/><span>RadarGPT</span></a><br>
+    <a href="/app"><img src="https://img.icons8.com/ios-filled/50/search.png"/><span>FindRadar</span></a><br>
+    <a href="/saved"><img src="https://img.icons8.com/ios-filled/50/bookmark.png"/><span>Saved</span></a><br>
+    <a href="/integrations"><img src="https://img.icons8.com/ios-filled/50/link.png"/><span>Integrate</span></a><br>
+  </div>
+
+  <div class="center-main" id="center-main">
+    <div class="title-header">Integrations</div>
+    <div class="main-content-area" id="main-content-area">
+      <div class="integrations-container">
+        <!-- Jira Integration -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon">🔄</div>
+            <div class="integration-title">Jira</div>
+          </div>
+          <div class="integration-description">
+            Connect PainRadar to Jira to create issues directly from your insights. Track market problems and opportunities in your existing workflow.
+          </div>
+          <div class="integration-status">
+            <div class="status-indicator disconnected"></div>
+            <div class="status-text disconnected">Not Connected</div>
+          </div>
+          <button class="integration-button" data-integration="jira">Connect to Jira</button>
+        </div>
+        
+        <!-- Trello Integration -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon">📋</div>
+            <div class="integration-title">Trello</div>
+          </div>
+          <div class="integration-description">
+            Send insights to Trello boards and organize your product roadmap based on market needs and opportunities.
+          </div>
+          <div class="integration-status">
+            <div class="status-indicator disconnected"></div>
+            <div class="status-text disconnected">Not Connected</div>
+          </div>
+          <button class="integration-button" data-integration="trello">Connect to Trello</button>
+        </div>
+        
+        <!-- Slack Integration -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon">💬</div>
+            <div class="integration-title">Slack</div>
+          </div>
+          <div class="integration-description">
+            Share insights with your team via Slack. Get notifications when new market trends are detected.
+          </div>
+          <div class="integration-status">
+            <div class="status-indicator disconnected"></div>
+            <div class="status-text disconnected">Not Connected</div>
+          </div>
+          <button class="integration-button" data-integration="slack">Connect to Slack</button>
+        </div>
+        
+        <!-- Notion Integration -->
+        <div class="integration-card">
+          <div class="integration-header">
+            <div class="integration-icon">📝</div>
+            <div class="integration-title">Notion</div>
+          </div>
+          <div class="integration-description">
+            Save insights to Notion databases. Build a knowledge base of market research and opportunities.
+          </div>
+          <div class="integration-status">
+            <div class="status-indicator disconnected"></div>
+            <div class="status-text disconnected">Not Connected</div>
+          </div>
+          <button class="integration-button" data-integration="notion">Connect to Notion</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jira Integration Modal -->
+  <div class="modal" id="jira-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Connect to Jira</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="jira-form">
+        <div class="form-group">
+          <label class="form-label">Jira Domain</label>
+          <input type="text" class="form-input" id="jira-domain" placeholder="your-company" required>
+          <small style="color: #b0faff;">https://your-company.atlassian.net</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="jira-email" placeholder="your.email@company.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Token</label>
+          <input type="password" class="form-input" id="jira-token" placeholder="API Token" required>
+          <small style="color: #b0faff;"><a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" style="color: #00fff7;">Generate a token</a></small>
+        </div>
+        <button type="submit" class="form-submit">Connect</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trello Integration Modal -->
+  <div class="modal" id="trello-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Connect to Trello</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="trello-form">
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input type="text" class="form-input" id="trello-key" placeholder="API Key" required>
+          <small style="color: #b0faff;"><a href="https://trello.com/app-key" target="_blank" style="color: #00fff7;">Get your API key</a></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Token</label>
+          <input type="password" class="form-input" id="trello-token" placeholder="API Token" required>
+        </div>
+        <button type="submit" class="form-submit">Connect</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Slack Integration Modal -->
+  <div class="modal" id="slack-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Connect to Slack</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="slack-form">
+        <div class="form-group">
+          <label class="form-label">Webhook URL</label>
+          <input type="text" class="form-input" id="slack-webhook" placeholder="https://hooks.slack.com/services/..." required>
+          <small style="color: #b0faff;"><a href="https://api.slack.com/messaging/webhooks" target="_blank" style="color: #00fff7;">Create a webhook</a></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Default Channel</label>
+          <input type="text" class="form-input" id="slack-channel" placeholder="#market-insights" required>
+        </div>
+        <button type="submit" class="form-submit">Connect</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notion Integration Modal -->
+  <div class="modal" id="notion-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Connect to Notion</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form class="modal-form" id="notion-form">
+        <div class="form-group">
+          <label class="form-label">Integration Token</label>
+          <input type="password" class="form-input" id="notion-token" placeholder="Integration Token" required>
+          <small style="color: #b0faff;"><a href="https://www.notion.so/my-integrations" target="_blank" style="color: #00fff7;">Create an integration</a></small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Database ID</label>
+          <input type="text" class="form-input" id="notion-database" placeholder="Database ID" required>
+          <small style="color: #b0faff;">The ID from your database URL</small>
+        </div>
+        <button type="submit" class="form-submit">Connect</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Star background animation
+    const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [], STAR_COUNT = 180;
+    function resize() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+    window.addEventListener('resize', resize); resize();
+    function randomStar() { return { x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3, dx: (Math.random() - 0.5) * 0.08, dy: (Math.random() - 0.5) * 0.08, twinkle: Math.random() * Math.PI * 2 }; }
+    function createStars() { stars = []; for (let i = 0; i < STAR_COUNT; i++) stars.push(randomStar()); }
+    function drawStars() { ctx.clearRect(0, 0, w, h); for (let star of stars) { star.twinkle += 0.03; let opacity = 0.6 + 0.4 * Math.sin(star.twinkle); ctx.save(); ctx.globalAlpha = opacity; ctx.beginPath(); ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6; ctx.fill(); ctx.restore(); star.x += star.dx; star.y += star.dy; if (star.x < 0) star.x = w; if (star.x > w) star.x = 0; if (star.y < 0) star.y = h; if (star.y > h) star.y = 0; } requestAnimationFrame(drawStars);}
+    createStars(); drawStars();
+
+    // Modal functionality
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modals when clicking close button
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const modal = this.closest('.modal');
+        modal.style.display = 'none';
+      });
+    });
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+    });
+
+    // Integration button click handlers
+    document.querySelectorAll('.integration-button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const integration = this.getAttribute('data-integration');
+        
+        // If already connected, disconnect
+        if (this.classList.contains('disconnect')) {
+          disconnectIntegration(integration);
+          return;
+        }
+        
+        // Otherwise open the connection modal
+        openModal(`${integration}-modal`);
+      });
+    });
+
+    // Form submission handlers
+    document.querySelectorAll('.modal-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formId = this.id;
+        const integration = formId.split('-')[0];
+        
+        // Get form data
+        const formData = {};
+        this.querySelectorAll('.form-input').forEach(input => {
+          formData[input.id] = input.value;
+        });
+        
+        // Connect the integration
+        connectIntegration(integration, formData);
+        
+        // Close the modal
+        closeModal(`${integration}-modal`);
+      });
+    });
+
+    // Connect integration
+    function connectIntegration(integration, formData) {
+      // In a real application, this would make an API call
+      console.log(`Connecting to ${integration}`, formData);
+      
+      // Update UI to show connected
+      const card = document.querySelector(`.integration-button[data-integration="${integration}"]`).closest('.integration-card');
+      const statusIndicator = card.querySelector('.status-indicator');
+      const statusText = card.querySelector('.status-text');
+      const button = card.querySelector('.integration-button');
+      
+      statusIndicator.classList.remove('disconnected');
+      statusIndicator.classList.add('connected');
+      
+      statusText.classList.remove('disconnected');
+      statusText.classList.add('connected');
+      statusText.textContent = 'Connected';
+      
+      button.classList.add('disconnect');
+      button.textContent = `Disconnect from ${integration.charAt(0).toUpperCase() + integration.slice(1)}`;
+      
+      // Save connection info to localStorage
+      const connections = JSON.parse(localStorage.getItem('painradar_connections') || '{}');
+      connections[integration] = {
+        connected: true,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('painradar_connections', JSON.stringify(connections));
+    }
+
+    // Disconnect integration
+    function disconnectIntegration(integration) {
+      // In a real application, this would make an API call
+      console.log(`Disconnecting from ${integration}`);
+      
+      // Update UI to show disconnected
+      const card = document.querySelector(`.integration-button[data-integration="${integration}"]`).closest('.integration-card');
+      const statusIndicator = card.querySelector('.status-indicator');
+      const statusText = card.querySelector('.status-text');
+      const button = card.querySelector('.integration-button');
+      
+      statusIndicator.classList.remove('connected');
+      statusIndicator.classList.add('disconnected');
+      
+      statusText.classList.remove('connected');
+      statusText.classList.add('disconnected');
+      statusText.textContent = 'Not Connected';
+      
+      button.classList.remove('disconnect');
+      button.textContent = `Connect to ${integration.charAt(0).toUpperCase() + integration.slice(1)}`;
+      
+      // Update localStorage
+      const connections = JSON.parse(localStorage.getItem('painradar_connections') || '{}');
+      delete connections[integration];
+      localStorage.setItem('painradar_connections', JSON.stringify(connections));
+    }
+
+    // Load saved connections
+    function loadConnections() {
+      const connections = JSON.parse(localStorage.getItem('painradar_connections') || '{}');
+      
+      for (const [integration, data] of Object.entries(connections)) {
+        if (data.connected) {
+          const card = document.querySelector(`.integration-button[data-integration="${integration}"]`).closest('.integration-card');
+          const statusIndicator = card.querySelector('.status-indicator');
+          const statusText = card.querySelector('.status-text');
+          const button = card.querySelector('.integration-button');
+          
+          statusIndicator.classList.remove('disconnected');
+          statusIndicator.classList.add('connected');
+          
+          statusText.classList.remove('disconnected');
+          statusText.classList.add('connected');
+          statusText.textContent = 'Connected';
+          
+          button.classList.add('disconnect');
+          button.textContent = `Disconnect from ${integration.charAt(0).toUpperCase() + integration.slice(1)}`;
+        }
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      loadConnections();
+    });
+  </script>
+</body>
+</html>

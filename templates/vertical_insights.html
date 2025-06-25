@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vertical Insights - PainRadar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --side-nav-width: 80px;
+      --transition: 0.3s cubic-bezier(.6,-0.28,.74,.05);
+    }
+    html, body {
+      min-height: 100%;
+      background: #000;
+      color: white;
+      font-family: 'Poppins', 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+    #star-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .side-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--side-nav-width);
+      height: 100vh;
+      background-color: #0b1c26;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem 0;
+      gap: 1.2rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+    }
+    .side-nav a {
+      text-align: center;
+      color: #b0faff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.3s ease;
+    }
+    .side-nav a:hover {
+      color: #00fff7;
+      transform: scale(1.05);
+    }
+    .side-nav img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+    .center-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin-left: var(--side-nav-width);
+      padding-bottom: 120px;
+      width: calc(100% - var(--side-nav-width));
+      transition: margin-left var(--transition), width var(--transition);
+    }
+    .title-header {
+      font-size: 2.6rem;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg,#fff,#aaa,#fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+      margin-top: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      width: 100%;
+    }
+    .main-content-area {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: min-height 0.3s;
+    }
+    .vertical-cards-container {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      align-items: stretch;
+      margin-bottom: 1.6rem;
+      margin-top: 0.8rem;
+      transition: opacity 0.5s, transform 0.5s;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .vertical-card {
+      background: linear-gradient(120deg,rgb(21, 21, 21) 70%, #10202b 100%);
+      border-radius: 14px;
+      box-shadow: 0 2px 16px rgba(7, 7, 7, 0.1), 0 0 0 1px #192d3a;
+      max-width: 200px;
+      min-width: 150px;
+      width: 100%;
+      padding: 1.1rem 1rem 1rem 1rem;
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      animation: cardPop 0.7s cubic-bezier(.6,-0.28,.74,.05) 1;
+      border: 1px solid #0ff;
+      transition: box-shadow 0.25s;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    .vertical-card:hover {
+      box-shadow: 0 6px 18px rgb(255, 255, 255), 0 0 0 2px rgb(0, 0, 0);
+    }
+    @keyframes cardPop {
+      0% { opacity: 0; transform: scale(0.8) translateY(30px);}
+      100% { opacity: 1; transform: scale(1) translateY(0);}
+    }
+    .vertical-card .vertical-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #00fff7;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.5px;
+    }
+    .vertical-card .vertical-desc {
+      font-size: 0.93rem;
+      color: #d2faff;
+      margin-bottom: 0.1rem;
+      line-height: 1.5;
+    }
+    .vertical-card .vertical-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.2rem;
+      color: #00fff7;
+      filter: drop-shadow(0 0 6px #00fff7);
+    }
+    .search-section {
+      position: fixed;
+      left: var(--side-nav-width);
+      right: 0;
+      bottom: 20px;
+      width: auto;
+      max-width: 900px;
+      margin: 0 auto;
+      z-index: 999;
+      background: rgba(0,0,0,0.96);
+      padding: 0.5rem 1rem 0.5rem 1rem;
+      box-shadow: 0 -2px 16px rgba(0,255,247,0.10);
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .search-box {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      padding: 0.4rem 1.2rem;
+      border-radius: 50px;
+      background: rgba(0, 255, 247, 0.05);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 255, 247, 0.2);
+      box-shadow: 0 0 10px rgba(0, 255, 247, 0.15);
+      transition: all 0.3s ease-in-out;
+      animation: neonGlow 3s infinite alternate;
+      gap: 1rem;
+      position: relative;
+      z-index: 998;
+      flex-wrap: wrap;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    @keyframes neonGlow {
+      0% { box-shadow: 0 0 10px rgba(0,255,247,0.15); }
+      100% { box-shadow: 0 0 25px rgba(0,255,247,0.5); }
+    }
+    .dropup {
+      position: relative;
+      display: inline-block;
+    }
+    .dropup-btn {
+      position: relative;
+      min-width: 120px;
+      user-select: none;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      color: white;
+      border-radius: 30px;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0,255,247,0.3);
+      padding: 0.2rem 1.2rem;
+      box-shadow: 0 0 8px rgba(0,255,247,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      height: 32px;
+      z-index: 1001;
+    }
+    .search-box textarea {
+      flex: 1;
+      padding: 0.4rem 1rem;
+      font-size: 1.08rem;
+      border: none;
+      border-radius: 22px;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-family: 'Poppins';
+      min-width: 0;
+      min-height: 32px;
+      max-height: 70px;
+      resize: none;
+      overflow-y: hidden;
+      line-height: 1.5;
+      box-sizing: border-box;
+      margin-right: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+    }
+    .search-box textarea::placeholder {
+      color: #ccc;
+    }
+    .send-button {
+      background-color: #00fff7;
+      border: none;
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 8px rgba(0,255,247,0.5);
+      flex-shrink: 0;
+    }
+    .send-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 14px rgba(0,255,247,0.9);
+    }
+    .send-button svg {
+      width: 20px;
+      height: 20px;
+      fill: black;
+    }
+    .result-block {
+      margin-bottom: 2.5rem;
+      width: 100%;
+      max-width: 900px;
+      margin-left: 0;
+      margin-right: auto;
+      animation: cardPop 0.7s cubic-bezier(.6,-0.28,.74,.05) 1;
+      transition: box-shadow 0.25s;
+    }
+    .result-query {
+      font-size: 1.1rem;
+      color: #5e9fd4;
+      margin-bottom: 0.3em;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+    .answer-card {
+      background: rgba(16,26,35,0.98);
+      border-radius: 18px;
+      box-shadow: 0 2px 24px rgba(0,255,247,0.10), 0 0 0 1.5px #192d3a;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 0 1.5rem 0;
+      padding: 2.2rem 2rem 2rem;
+      z-index: 5;
+      position: relative;
+      min-height: 120px;
+      margin-left: 0;
+      margin-right: auto;
+      text-align: left;
+      color: #e7faff;
+    }
+    .answer-card h2 {
+      color: #00fff7;
+      font-size: 1.3rem;
+      margin-bottom: 1.1rem;
+      text-align: left;
+    }
+    .summary-content {
+      background: #101e2b;
+      border-radius: 14px;
+      padding: 1.2em 1.1em 1.1em 1.6em;
+      margin-bottom: 1.2em;
+      color: #e7faff;
+      font-size: 1.04rem;
+      line-height: 1.35;
+      box-shadow: 0 2px 16px rgba(0,255,247,0.07), 0 0 0 1px #22384a;
+      word-break: break-word;
+    }
+    .summary-content ul,
+    .summary-content ol {
+      margin: 0.4em 0 0.7em 1.1em;
+      padding-left: 1.1em;
+    }
+    .summary-content ul { list-style-type: disc; }
+    .summary-content ol { list-style-type: decimal; }
+    .summary-content li {
+      margin-bottom: 0.22em;
+      font-size: 1.03em;
+      line-height: 1.38;
+      list-style-position: outside;
+    }
+    .summary-content b {
+      color: #00fff7;
+    }
+    .summary-content h2, .summary-content h3, .summary-content h4 {
+      color: #00fff7;
+      margin-top: 1.1em;
+      margin-bottom: 0.5em;
+      font-weight: 700;
+    }
+    .summary-content h2 { font-size: 1.12em; }
+    .summary-content h3 { font-size: 1.06em; }
+    .summary-content h4 { font-size: 1.03em; }
+    .history-sidebar {
+      position: fixed;
+      top: 0;
+      left: var(--side-nav-width);
+      width: 180px;
+      height: 100vh;
+      background: rgba(0, 255, 247, 0.07);
+      box-shadow: 2px 0 14px rgba(0,255,247,0.05);
+      border-right: 1.5px solid rgba(0,255,247,0.12);
+      z-index: 19;
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      overflow-y: auto;
+      gap: 0;
+      align-items: stretch;
+      transition: width 0.3s, left 0.3s, opacity 0.3s, padding 0.3s;
+    }
+    .history-sidebar.collapsed {
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .history-toggle-btn {
+      transition: left 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="star-bg-canvas"></canvas>
+ 
+  <div class="side-nav">
+  <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+    <span>RadarGPT</span>
+  </a><br>
+
+  <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+    <span>Verticals</span>
+  </a><br>
+
+  <a href="/pain-cloud-combined" title="Pain-cloud">
+    <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Account"/>
+    <span>Insights</span>
+  </a><br>
+
+  <a href="/saved" title="Saved">
+    <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Account"/>
+    <span>Saved</span>
+  </a><br>
+  
+  <a href="/teams" title="Teams" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/collaboration.png" alt="Teams"/>
+    <span>Teams</span>
+  </a><br>
+  <a href="/integrations" title="Integrations" class="auth-link">
+    <img src="https://img.icons8.com/ios-filled/50/link.png" alt="Integrations"/>
+    <span>Integrate</span>
+  </a>
+</div>
+
+  <div class="center-main" id="center-main">
+    <div class="title-header">Industry Verticals</div>
+    <div class="main-content-area" id="main-content-area">
+      <div id="vertical-cards" class="vertical-cards-container">
+        <div class="vertical-card" data-vertical="fintech">
+          <div class="vertical-icon">💰</div>
+          <div class="vertical-title">FinTech</div>
+          <div class="vertical-desc">
+            Financial technology insights for banking, payments, lending, and investment solutions.
+          </div>
+        </div>
+        <div class="vertical-card" data-vertical="healthcare">
+          <div class="vertical-icon">🏥</div>
+          <div class="vertical-title">Healthcare</div>
+          <div class="vertical-desc">
+            Medical and healthcare insights for patient care, clinical workflows, and health management.
+          </div>
+        </div>
+        <div class="vertical-card" data-vertical="ecommerce">
+          <div class="vertical-icon">🛒</div>
+          <div class="vertical-title">E-Commerce</div>
+          <div class="vertical-desc">
+            Online retail insights for shopping experiences, marketplaces, and consumer behavior.
+          </div>
+        </div>
+        <div class="vertical-card" data-vertical="saas">
+          <div class="vertical-icon">☁️</div>
+          <div class="vertical-title">SaaS</div>
+          <div class="vertical-desc">
+            Software-as-a-Service insights for cloud platforms, enterprise solutions, and subscription models.
+          </div>
+        </div>
+        <div class="vertical-card" data-vertical="edtech">
+          <div class="vertical-icon">🎓</div>
+          <div class="vertical-title">EdTech</div>
+          <div class="vertical-desc">
+            Educational technology insights for learning platforms, student engagement, and teaching tools.
+          </div>
+        </div>
+      </div>
+      <div id="results-history"></div>
+    </div>
+  </div>
+
+  <div class="search-section" id="search-section">
+    <div class="search-box">
+      <div class="dropup" id="dropup">
+        <div class="dropup-btn" id="dropup-btn" tabindex="0" aria-haspopup="listbox" aria-expanded="false" role="combobox" aria-label="Select Vertical">
+          Select Vertical
+        </div>
+      </div>
+      <textarea placeholder="What problem are you exploring?" id="search-input" aria-label="Search input" rows="1"></textarea>
+      <div class="streaming-option" style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+        <input type="checkbox" id="streaming-checkbox" checked style="accent-color: #00fff7;">
+        <label for="streaming-checkbox" style="color: #00fff7; font-size: 0.9rem; cursor: pointer;">Enable streaming</label>
+      </div>
+      <button class="send-button" id="send-btn" title="Search" aria-label="Search button">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="history-sidebar" id="history-sidebar">
+    <div class="history-title">History</div>
+    <ul class="history-list" id="history-list"></ul>
+  </div>
+  <button class="history-toggle-btn" id="history-toggle-btn" aria-label="Toggle history sidebar" style="position:fixed;top:20px;left:260px;z-index:30;background:rgba(0,255,247,0.15);border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:left 0.3s;"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#00fff7" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
+
+  <script>
+    // Star background animation
+    const canvas = document.getElementById('star-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = window.innerWidth, h = window.innerHeight;
+    let stars = [], STAR_COUNT = 180;
+    function resize() { w = window.innerWidth; h = window.innerHeight; canvas.width = w; canvas.height = h; }
+    window.addEventListener('resize', resize); resize();
+    function randomStar() { return { x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.3, dx: (Math.random() - 0.5) * 0.08, dy: (Math.random() - 0.5) * 0.08, twinkle: Math.random() * Math.PI * 2 }; }
+    function createStars() { stars = []; for (let i = 0; i < STAR_COUNT; i++) stars.push(randomStar()); }
+    function drawStars() { ctx.clearRect(0, 0, w, h); for (let star of stars) { star.twinkle += 0.03; let opacity = 0.6 + 0.4 * Math.sin(star.twinkle); ctx.save(); ctx.globalAlpha = opacity; ctx.beginPath(); ctx.arc(star.x, star.y, star.r, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 6; ctx.fill(); ctx.restore(); star.x += star.dx; star.y += star.dy; if (star.x < 0) star.x = w; if (star.x > w) star.x = 0; if (star.y < 0) star.y = h; if (star.y > h) star.y = 0; } requestAnimationFrame(drawStars);}
+    createStars(); drawStars();
+
+    // Markdown to HTML converter
+    function markdownToHtml(text) {
+      text = text.replace(/^\s*\*\s*/gm, '- ');
+      text = text.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+      text = text.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+      text = text.replace(/^# (.*)$/gm, '<h2>$1</h2>');
+      text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                 .replace(/__(.*?)__/g, '<b>$1</b>');
+      text = text.replace(/(^|\n)(\d+\..+?)(?=\n[^0-9]|\n$|\n\d+\.)/gs, function(match) {
+        let items = match.trim().split(/\n/).map(x => x.replace(/^\d+\.\s?/, '').trim());
+        if (items.length === 1 && !/^\d+\./.test(match.trim())) return match;
+        let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+        return '<ol>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ol>\n';
+      });
+      text = text.replace(/(^|\n)(-\s.+?)(?=\n[^\-\n]|\n$|\n-\s)/gs, function(match) {
+        let items = match.trim().split(/\n/).map(x => x.replace(/^- /, '').trim());
+        if (items.length === 1 && !/^-\s/.test(match.trim())) return match;
+        let compact = items.every(i => /^Novelty:|^Urgency:|^Feasibility:|^Emotional intensity:|^Frequency:|^Market size:|^Validation:|^Gaps:|^Existing Solutions:|^Problem:|^Idea:|^Description:/.test(i));
+        return '<ul>' + items.filter(Boolean).map(i => `<li${compact ? ' class="compact"' : ''}>${i}</li>`).join('') + '</ul>\n';
+      });
+      text = text.replace(/\*/g, '');
+      text = text.replace(/\n/g, '<br>');
+      return text;
+    }
+
+    // Handle vertical card clicks
+    document.querySelectorAll('.vertical-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const vertical = this.getAttribute('data-vertical');
+        document.getElementById('dropup-btn').textContent = this.querySelector('.vertical-title').textContent;
+        document.getElementById('dropup-btn').setAttribute('data-vertical', vertical);
+        document.getElementById('search-input').focus();
+      });
+    });
+
+    // Handle search
+    document.getElementById('send-btn').addEventListener('click', function() {
+      const query = document.getElementById('search-input').value.trim();
+      const vertical = document.getElementById('dropup-btn').getAttribute('data-vertical');
+      const useStreaming = document.getElementById('streaming-checkbox').checked;
+      
+      if (!query || !vertical) {
+        alert('Please select an industry vertical and enter a search query');
+        return;
+      }
+      
+      // Show loading state
+      const resultsHistory = document.getElementById('results-history');
+      resultsHistory.innerHTML = `
+        <div class="result-block">
+          <div class="result-query">Analyzing: <b>${query}</b> for <b>${document.getElementById('dropup-btn').textContent}</b></div>
+          <div class="answer-card">
+            <h2>${useStreaming ? 'Streaming industry insights...' : 'Loading industry insights...'}</h2>
+            <div class="summary-content" id="streaming-content">
+              <p>${useStreaming ? 'Starting analysis...' : 'Gathering data from industry sources...'}</p>
+              ${useStreaming ? '<div style="margin-top: 10px; color: #00fff7; font-size: 0.9rem;">🔄 Streaming response...</div>' : ''}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      if (useStreaming) {
+        // Use streaming endpoint
+        fetch(`/analyze-stream/${vertical}/${encodeURIComponent(query)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          
+          const streamingContent = document.getElementById('streaming-content');
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let fullResponse = '';
+          
+          function readStream() {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                // Try to parse as JSON and show structured results
+                try {
+                  const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+                  if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    // Update the content with structured data
+                    streamingContent.innerHTML = `<pre style="color: #e7faff; font-family: 'Courier New', monospace; white-space: pre-wrap; margin: 0; padding: 0; line-height: 1.4; font-size: 0.95rem;">${JSON.stringify(parsed, null, 2)}</pre>`;
+                  } else {
+                    // If no JSON found, show as formatted text
+                    streamingContent.innerHTML = markdownToHtml(fullResponse);
+                  }
+                } catch (e) {
+                  console.log('Could not parse as JSON, showing as text');
+                  streamingContent.innerHTML = markdownToHtml(fullResponse);
+                }
+                
+                // Add chat functionality after streaming is complete
+                const chatContainer = document.createElement('div');
+                chatContainer.className = 'chat-container';
+                chatContainer.style.cssText = 'margin-top: 30px; border-top: 1px solid rgba(0,255,247,0.2); padding-top: 20px;';
+                chatContainer.innerHTML = `
+                  <h3 style="color: #00fff7; margin-bottom: 20px; font-size: 1.2rem;">Ask follow-up questions</h3>
+                  <div class="chat-messages" id="chat-messages" style="margin-bottom: 20px; min-height: 50px;"></div>
+                  <div class="chat-input" style="display: flex; gap: 15px;">
+                    <textarea id="chat-input" placeholder="Ask a question about these insights..." 
+                      style="flex: 1; padding: 12px 16px; border-radius: 12px; background: rgba(0,255,247,0.05); color: white; border: 1px solid rgba(0,255,247,0.2); font-size: 1.05rem;"
+                      rows="1"></textarea>
+                    <button id="chat-send" data-vertical="${vertical}" data-query="${encodeURIComponent(query)}" data-context="${encodeURIComponent(fullResponse)}"
+                      style="background: #00fff7; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: black;"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                    </button>
+                  </div>
+                `;
+                
+                const answerCard = document.querySelector('.answer-card');
+                answerCard.appendChild(chatContainer);
+                
+                // Set up chat functionality
+                setupChatFunctionality();
+                // Fetch and render chat history
+                fetchAndRenderVerticalChatHistory(vertical, query);
+                // Save to history
+                saveVerticalQueryToHistory(vertical, query, fullResponse);
+                
+                return;
+              }
+              
+              const chunk = decoder.decode(value);
+              fullResponse += chunk;
+              
+              // Try to format the response as it comes in
+              try {
+                // Look for JSON structure and format it
+                const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const jsonStr = jsonMatch[0];
+                  // Try to parse and format the JSON
+                  try {
+                    const parsed = JSON.parse(jsonStr);
+                    const formatted = JSON.stringify(parsed, null, 2);
+                    streamingContent.innerHTML = `<pre style="color: #e7faff; font-family: 'Courier New', monospace; white-space: pre-wrap; margin: 0; padding: 0; line-height: 1.4; font-size: 0.95rem;">${formatted}</pre>`;
+                  } catch (parseError) {
+                    // If JSON is incomplete, try to format what we have
+                    let formattedStr = jsonStr;
+                    // Add some basic formatting for incomplete JSON
+                    formattedStr = formattedStr.replace(/\{/g, '{\n  ');
+                    formattedStr = formattedStr.replace(/\}/g, '\n}');
+                    formattedStr = formattedStr.replace(/,\s*"/g, ',\n  "');
+                    formattedStr = formattedStr.replace(/,\s*\[/g, ',\n  [');
+                    formattedStr = formattedStr.replace(/,\s*\{/g, ',\n  {');
+                    streamingContent.innerHTML = `<pre style="color: #e7faff; font-family: 'Courier New', monospace; white-space: pre-wrap; margin: 0; padding: 0; line-height: 1.4; font-size: 0.95rem;">${formattedStr}</pre>`;
+                  }
+                } else {
+                  // If no JSON structure yet, show as formatted text
+                  streamingContent.innerHTML = markdownToHtml(fullResponse);
+                }
+              } catch (e) {
+                // Fallback to plain text
+                streamingContent.textContent = fullResponse;
+              }
+              
+              streamingContent.scrollTop = streamingContent.scrollHeight;
+              
+              return readStream();
+            });
+          }
+          
+          return readStream();
+        })
+        .catch(error => {
+          resultsHistory.innerHTML = `
+            <div class="result-block">
+              <div class="result-query">Error analyzing: <b>${query}</b></div>
+              <div class="answer-card">
+                <h2>Error</h2>
+                <div class="summary-content">
+                  <p>An error occurred: ${error.message}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        // Use non-streaming endpoint
+        fetch(`/analyze/${vertical}/${encodeURIComponent(query)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            resultsHistory.innerHTML = `
+              <div class="result-block">
+                <div class="result-query">Error analyzing: <b>${query}</b></div>
+                <div class="answer-card">
+                  <h2>Error</h2>
+                  <div class="summary-content">
+                    <p>${data.error}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+            return;
+          }
+          
+          const insights = data.structured_insights ? JSON.stringify(data.structured_insights, null, 2) : data.raw_insights || data.insights || 'No insights available';
+          
+          resultsHistory.innerHTML = `
+            <div class="result-block">
+              <div class="result-query">Analysis for: <b>${query}</b> in <b>${data.vertical_name}</b></div>
+              <div class="answer-card">
+                <h2>${data.vertical_name} Industry Insights</h2>
+                <div class="summary-content">
+                  ${markdownToHtml(insights)}
+                </div>
+                <div class="chat-container" style="margin-top: 30px; border-top: 1px solid rgba(0,255,247,0.2); padding-top: 20px;">
+                  <h3 style="color: #00fff7; margin-bottom: 20px; font-size: 1.2rem;">Ask follow-up questions</h3>
+                  <div class="chat-messages" id="chat-messages" style="margin-bottom: 20px; min-height: 50px;"></div>
+                  <div class="chat-input" style="display: flex; gap: 15px;">
+                    <textarea id="chat-input" placeholder="Ask a question about these insights..." 
+                      style="flex: 1; padding: 12px 16px; border-radius: 12px; background: rgba(0,255,247,0.05); color: white; border: 1px solid rgba(0,255,247,0.2); font-size: 1.05rem;"
+                      rows="1"></textarea>
+                    <button id="chat-send" data-vertical="${vertical}" data-query="${encodeURIComponent(query)}" data-context="${encodeURIComponent(insights)}"
+                      style="background: #00fff7; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: black;"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // Set up chat functionality
+          setupChatFunctionality();
+          // Fetch and render chat history
+          fetchAndRenderVerticalChatHistory(vertical, query);
+          // Save to history
+          saveVerticalQueryToHistory(vertical, query, insights);
+        })
+        .catch(error => {
+          resultsHistory.innerHTML = `
+            <div class="result-block">
+              <div class="result-query">Error analyzing: <b>${query}</b></div>
+              <div class="answer-card">
+                <h2>Error</h2>
+                <div class="summary-content">
+                  <p>An error occurred: ${error.message}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+    });
+
+    // Handle textarea auto-resize
+    const textarea = document.getElementById('search-input');
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 70) + 'px';
+    });
+
+    // Handle Enter key in textarea
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('send-btn').click();
+      }
+    });
+    
+    // Setup chat functionality
+    function setupChatFunctionality() {
+      const chatInput = document.getElementById('chat-input');
+      const chatSend = document.getElementById('chat-send');
+      const chatMessages = document.getElementById('chat-messages');
+      
+      if (!chatInput || !chatSend || !chatMessages) return;
+      
+      // Auto-resize chat input
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 70) + 'px';
+      });
+      
+      // Handle Enter key in chat input
+      chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          chatSend.click();
+        }
+      });
+      
+      // Handle chat send button click
+      chatSend.addEventListener('click', function() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+        
+        const vertical = this.getAttribute('data-vertical');
+        const query = decodeURIComponent(this.getAttribute('data-query'));
+        const context = decodeURIComponent(this.getAttribute('data-context'));
+        
+        // Add user message to chat
+        chatMessages.innerHTML += `
+          <div style="margin-bottom: 15px; text-align: right;">
+            <div style="display: inline-block; background: rgba(0,255,247,0.1); padding: 12px 16px; border-radius: 12px; max-width: 90%; text-align: left; font-size: 1.05rem;">
+              ${message}
+            </div>
+          </div>
+        `;
+        
+        // Clear input
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        
+        // Add loading message
+        const loadingMsgId = 'loading-msg-' + Date.now();
+        chatMessages.innerHTML += `
+          <div style="margin-bottom: 15px;" id="${loadingMsgId}">
+            <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; max-width: 90%;">
+              <div class="typing-indicator" style="display: flex; gap: 6px;">
+                <span style="width: 10px; height: 10px; background: white; border-radius: 50%; animation: pulse 1s infinite;"></span>
+                <span style="width: 10px; height: 10px; background: white; border-radius: 50%; animation: pulse 1s infinite 0.2s;"></span>
+                <span style="width: 10px; height: 10px; background: white; border-radius: 50%; animation: pulse 1s infinite 0.4s;"></span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Send request to server
+        fetch(`/vertical-chat/${vertical}/${encodeURIComponent(query)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: message,
+            context: context
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Remove loading message
+          document.getElementById(loadingMsgId)?.remove();
+          
+          // Add bot response
+          chatMessages.innerHTML += `
+            <div style="margin-bottom: 15px;">
+              <div style="display: inline-block; background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; max-width: 90%; font-size: 1.05rem;">
+                ${markdownToHtml(data.bot_reply)}
+              </div>
+            </div>
+          `;
+          
+          // Scroll to bottom
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          // After sending a message, update sidebar and chat history
+          loadAndRenderVerticalHistory();
+          fetchAndRenderVerticalChatHistory(vertical, query);
+        })
+        .catch(error => {
+          // Remove loading message
+          document.getElementById(loadingMsgId)?.remove();
+          
+          // Add error message
+          chatMessages.innerHTML += `
+            <div style="margin-bottom: 15px;">
+              <div style="display: inline-block; background: rgba(255,0,0,0.2); padding: 12px 16px; border-radius: 12px; max-width: 90%; font-size: 1.05rem;">
+                Error: ${error.message || 'Failed to get response'}
+              </div>
+            </div>
+          `;
+          
+          // Scroll to bottom
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+      });
+    }
+    
+    // Add pulse animation for typing indicator
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0% { opacity: 0.3; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0.3; transform: scale(0.8); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // --- History Sidebar Logic (PostgreSQL-backed) ---
+    async function fetchVerticalHistory() {
+      const res = await fetch('/api/history');
+      const all = await res.json();
+      // Only show vertical insights queries
+      return all.filter(q => q.vertical && q.vertical !== '');
+    }
+
+    function renderVerticalHistorySidebar(history) {
+      const sidebar = document.getElementById('history-list');
+      if (!history.length) {
+        sidebar.innerHTML = '<li style="color:#aaa;">No previous queries yet.</li>';
+        return;
+      }
+      sidebar.innerHTML = history.map(q => `
+        <li class="history-item" data-id="${q.id}" tabindex="0" style="cursor:pointer; padding:8px 0; border-bottom:1px solid #222; display: flex; align-items: center; justify-content: space-between;">
+          <span style="flex:1;">
+            <b>${q.query}</b> <span style="color:#00fff7;">(${q.vertical})</span>
+            <div style="font-size:0.8em;color:#aaa;">${new Date(q.timestamp).toLocaleString()}</div>
+          </span>
+          <button class="delete-history-btn" title="Delete" style="background:none;border:none;color:#ff4d4f;font-size:0.1em;cursor:pointer;padding:2px 6px 2px 8px;outline:none;">
+            ❌
+          </button>
+        </li>
+      `).join('');
+      sidebar.querySelectorAll('.history-item').forEach(el => {
+        el.onclick = async function(e) {
+          if (e.target.classList.contains('delete-history-btn')) return; // Don't trigger on delete
+          const id = this.getAttribute('data-id');
+          const q = history.find(x => x.id == id);
+          showVerticalHistoryResult(q);
+        };
+        el.querySelector('.delete-history-btn').onclick = async function(e) {
+          e.stopPropagation();
+          const id = el.getAttribute('data-id');
+          await fetch(`/api/history/${id}`, { method: 'DELETE' });
+          loadAndRenderVerticalHistory();
+        };
+      });
+    }
+
+    function showVerticalHistoryResult(item) {
+      const resultsHistory = document.getElementById('results-history');
+      resultsHistory.innerHTML = `
+        <div class="result-block">
+          <div class="result-query">Previous: <b>${item.query}</b> in <b>${item.vertical}</b></div>
+          <div class="answer-card">
+            <h2>${item.vertical} Industry Insights</h2>
+            <div class="summary-content">${markdownToHtml(item.result)}</div>
+            <div class="chat-container" style="margin-top: 30px; border-top: 1px solid rgba(0,255,247,0.2); padding-top: 20px;">
+              <h3 style="color: #00fff7; margin-bottom: 20px; font-size: 1.2rem;">Chat History</h3>
+              <div class="chat-messages" id="chat-messages" style="margin-bottom: 20px; min-height: 50px;"></div>
+              <div class="chat-input" style="display: flex; gap: 15px; margin-top: 10px;">
+                <textarea id="chat-input" placeholder="Ask a question about these insights..."
+                  style="flex: 1; padding: 12px 16px; border-radius: 12px; background: rgba(0,255,247,0.05); color: white; border: 1px solid rgba(0,255,247,0.2); font-size: 1.05rem;"
+                  rows="1"></textarea>
+                <button id="chat-send" data-vertical="${item.vertical}" data-query="${encodeURIComponent(item.query)}" data-context="${encodeURIComponent(item.result)}"
+                  style="background: #00fff7; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                  <svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: black;"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button id="backToHistory" style="margin-top:20px;"></button>
+      `;
+      document.getElementById('backToHistory').onclick = loadAndRenderVerticalHistory;
+      fetchAndRenderVerticalChatHistory(item.vertical, item.query);
+      setupChatFunctionality(); // Enable chat for previous queries
+    }
+
+    async function fetchAndRenderVerticalChatHistory(vertical, query) {
+      const res = await fetch(`/api/vertical_chat_history?vertical=${encodeURIComponent(vertical)}&query=${encodeURIComponent(query)}`);
+      const chatHistory = await res.json();
+      const chatMessages = document.getElementById('chat-messages');
+      if (!chatMessages) return;
+      chatMessages.innerHTML = '';
+      chatHistory.forEach(msg => {
+        chatMessages.innerHTML += `
+          <div style="margin-bottom: 15px;">
+            <div style="display: inline-block; background: ${msg.role === 'user' ? 'rgba(0,255,247,0.08)' : 'rgba(255,255,255,0.1)'}; padding: 12px 16px; border-radius: 12px; max-width: 90%; font-size: 1.05rem;">
+              ${markdownToHtml(msg.text)}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // --- Save new vertical query to backend history ---
+    function saveVerticalQueryToHistory(vertical, query, summary) {
+      fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query,
+          source: 'vertical',
+          mode: '',
+          result: summary,
+          vertical: vertical
+        })
+      }).then(() => {
+        loadAndRenderVerticalHistory();
+        // Also re-fetch chat history to ensure it's up to date
+        fetchAndRenderVerticalChatHistory(vertical, query);
+      });
+    }
+
+    // --- History Sidebar Toggle ---
+    const sidebar = document.getElementById('history-sidebar');
+    const toggleBtn = document.getElementById('history-toggle-btn');
+    let sidebarOpen = true;
+    toggleBtn.onclick = function() {
+      sidebarOpen = !sidebarOpen;
+      if (sidebarOpen) {
+        sidebar.classList.remove('collapsed');
+        toggleBtn.style.left = '260px';
+        toggleBtn.querySelector('svg').style.transform = 'rotate(0deg)';
+      } else {
+        sidebar.classList.add('collapsed');
+        toggleBtn.style.left = '80px';
+        toggleBtn.querySelector('svg').style.transform = 'rotate(180deg)';
+      }
+    };
+
+    // Loads and renders the vertical history sidebar
+    async function loadAndRenderVerticalHistory() {
+      const history = await fetchVerticalHistory();
+      renderVerticalHistorySidebar(history);
+      // Do NOT clear the main area here!
+      // document.getElementById('results-history').innerHTML = '';
+    }
+
+    // On page load, render the history sidebar immediately
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAndRenderVerticalHistory();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Trend Graph</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        body { background: #000; color: #fff; font-family: 'Poppins', 'Montserrat', sans-serif; }
+        .container { max-width: 900px; margin: 40px auto; background: rgba(0,255,247,0.07); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,255,247,0.08); padding: 32px; }
+        h1 { color: #00fff7; text-align: center; margin-bottom: 30px; }
+        .form-row { display: flex; gap: 16px; margin-bottom: 32px; justify-content: center; }
+        select, input { padding: 10px 16px; border-radius: 12px; border: 1.5px solid #00fff7; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; }
+        button { background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; font-weight: 700; border: none; border-radius: 14px; padding: 0.6em 1.2em; box-shadow: 0 2px 12px rgba(0,255,247,0.12); transition: background 0.18s, color 0.18s, box-shadow 0.18s; }
+        button:hover { background: linear-gradient(90deg,#5e9fd4,#00fff7); color: #001f2f; box-shadow: 0 6px 18px #00fff7; }
+        .trend-section { margin-top: 40px; }
+        .trend-title { color: #5e9fd4; font-size: 1.3rem; margin-bottom: 18px; }
+        .trend-list { margin-bottom: 24px; }
+        .trend-item { background: rgba(0,255,247,0.09); border: 1.5px solid rgba(0,255,247,0.18); border-radius: 14px; padding: 16px; margin-bottom: 12px; color: #fff; }
+        .rank-badge { background: #ff6b6b; color: #fff; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; }
+        .trend-keyword { background: linear-gradient(90deg,#00fff7,#5e9fd4); color: #001f2f; border-radius: 20px; padding: 8px 18px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(0,255,247,0.08); margin-right: 8px; }
+        .trend-title-main { color: #00fff7; font-size: 1.5rem; margin-bottom: 24px; text-align:center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pain Trend Graph</h1>
+        <form id="trendForm" class="form-row">
+            <select id="personaSelect" required>
+                <option value="">Select Persona / Job Role</option>
+                <option value="Product Manager">Product Manager</option>
+                <option value="Software Engineer">Software Engineer</option>
+                <option value="Sales">Sales</option>
+                <option value="Customer Support">Customer Support</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Founder">Founder</option>
+            </select>
+            <select id="industrySelect" required>
+                <option value="">Select Industry</option>
+                <option value="SaaS">SaaS</option>
+                <option value="Fintech">Fintech</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="E-Commerce">E-Commerce</option>
+                <option value="EdTech">EdTech</option>
+            </select>
+            <button type="submit"><i class="bi bi-graph-up"></i> Show Trends</button>
+        </form>
+        <div id="loading" style="display:none;text-align:center;margin:30px 0;color:#00fff7;">Loading trend data...</div>
+        <div id="trendResults" class="trend-section" style="display:none;"></div>
+    </div>
+    <script>
+        document.getElementById('trendForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const persona = document.getElementById('personaSelect').value;
+            const industry = document.getElementById('industrySelect').value;
+            if (!persona || !industry) return;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('trendResults').style.display = 'none';
+            document.getElementById('trendResults').innerHTML = '';
+            try {
+                const res = await fetch('/pain-cloud-realtime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ persona, industry, mode: 'real' })
+                });
+                const data = await res.json();
+                document.getElementById('loading').style.display = 'none';
+                if (data.error) {
+                    document.getElementById('trendResults').innerHTML = `<div style='color:#ff6b6b;'>${data.error}</div>`;
+                    document.getElementById('trendResults').style.display = 'block';
+                    return;
+                }
+                // Render most useful, reliable, and related posts
+                let html = '';
+                html += `<div class='trend-title-main'><i class='bi bi-exclamation-triangle'></i> Most Useful, Reliable & Related Posts</div>`;
+                html += `<div class='trend-list'>`;
+                (data.complaints || data.pain_points || []).forEach((p, i) => {
+                    html += `<div class='trend-item'><span class='rank-badge'>${i+1}</span> <b>${p.title || p.summary}</b><br>`;
+                    if (p.selftext) html += `<div style='color:#b2ebf2;margin:8px 0 4px 0;'>${p.selftext.substring(0, 180)}${p.selftext.length > 180 ? '...' : ''}</div>`;
+                    html += `<span style='color:#ffd54f;font-weight:600;'>[Upvotes: ${p.score !== undefined ? p.score : (p.severity !== undefined ? p.severity : '-')}]</span> <a href='${p.url}' target='_blank' style='color:#00fff7;margin-left:10px;'>View</a></div>`;
+                });
+                html += `</div>`;
+                document.getElementById('trendResults').innerHTML = html;
+                document.getElementById('trendResults').style.display = 'block';
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('trendResults').innerHTML = `<div style='color:#ff6b6b;'>Error loading trend data.</div>`;
+                document.getElementById('trendResults').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

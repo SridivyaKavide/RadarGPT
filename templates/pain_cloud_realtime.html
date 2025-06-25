@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Cloud Realtime</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --side-nav-width: 80px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #0b0c10;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--side-nav-width);
+            height: 100vh;
+            background-color: #0b1c26;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 1.2rem;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.6);
+        }
+
+        .side-nav a {
+            text-align: center;
+            color: #b0faff;
+            font-size: 0.7rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .side-nav a:hover {
+            color: #00fff7;
+            transform: scale(1.05);
+        }
+
+        .side-nav img {
+            width: 20px;
+            height: 20px;
+            filter: brightness(0) invert(1);
+        }
+
+        .realtime-container {
+            margin-left: var(--side-nav-width);
+            padding: 2rem;
+            height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .realtime-header {
+            margin-bottom: 2rem;
+        }
+
+        .realtime-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00fff7;
+            margin-bottom: 1rem;
+        }
+
+        .realtime-subtitle {
+            font-size: 1.1rem;
+            color: #b0faff;
+            opacity: 0.8;
+        }
+
+        .search-container {
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1.5px solid #1a2a36;
+            background: rgba(18, 22, 28, 0.98);
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-button {
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(90deg,#00fff7,#5e9fd4);
+            color: #001f2f;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,255,247,0.3);
+        }
+
+        .realtime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .realtime-card {
+            background: rgba(18, 22, 28, 0.98);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 32px 0 rgba(0,255,247,0.10);
+            border: 1.5px solid #1a2a36;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #00fff7;
+            margin-bottom: 1rem;
+        }
+
+        .card-content {
+            color: #b0faff;
+            opacity: 0.9;
+        }
+
+        .live-feed {
+            width: 100%;
+            height: 400px;
+            background: rgba(18, 22, 28, 0.98);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 32px 0 rgba(0,255,247,0.10);
+            border: 1.5px solid #1a2a36;
+            margin-bottom: 2rem;
+            overflow-y: auto;
+        }
+
+        .feed-item {
+            padding: 1rem;
+            border-bottom: 1px solid #1a2a36;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .feed-item:last-child {
+            border-bottom: none;
+        }
+
+        .feed-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #00fff7;
+            margin-bottom: 0.5rem;
+        }
+
+        .feed-content {
+            color: #b0faff;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .feed-meta {
+            font-size: 0.9rem;
+            color: #b0faff;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .realtime-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .realtime-container {
+                padding: 1rem;
+            }
+
+            .realtime-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="side-nav">
+        <a href="{{ url_for('home') }}" title="Home" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/home.png" alt="Home"/>
+            <span>Home</span>
+        </a>
+
+        <a href="{{ url_for('radargpt') }}" title="RadarGPT" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/globe.png" alt="RadarGPT"/>
+            <span>RadarGPT</span>
+        </a>
+
+        <a href="/verticals-pain-dashboard" title="Verticals" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/building.png" alt="Verticals"/>
+            <span>Verticals</span>
+        </a>
+
+        <a href="/pain-cloud-combined" title="Pain-cloud">
+            <img src="https://img.icons8.com/ios-filled/50/graph.png" alt="Insights"/>
+            <span>Insights</span>
+        </a>
+
+        <a href="/saved" title="Saved">
+            <img src="https://img.icons8.com/ios-filled/50/bookmark.png" alt="Saved"/>
+            <span>Saved</span>
+        </a>
+
+        <a href="/teams" title="Teams" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/collaboration.png" alt="Teams"/>
+            <span>Teams</span>
+        </a>
+
+        <a href="/integrations" title="Integrations" class="auth-link">
+            <img src="https://img.icons8.com/ios-filled/50/link.png" alt="Integrations"/>
+            <span>Integrate</span>
+        </a>
+    </div>
+
+    <div class="realtime-container">
+        <div class="realtime-header">
+            <h1 class="realtime-title">Pain Cloud Realtime</h1>
+            <p class="realtime-subtitle">Monitor pain points in real-time from various sources</p>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Enter keyword to monitor pain points...">
+            <button class="search-button" onclick="startMonitoring()">Start Monitoring</button>
+        </div>
+
+        <div class="realtime-grid">
+            <div class="realtime-card">
+                <h2 class="card-title">Active Sources</h2>
+                <div class="card-content" id="activeSources">Loading...</div>
+            </div>
+
+            <div class="realtime-card">
+                <h2 class="card-title">Pain Points Last Hour</h2>
+                <div class="card-content" id="lastHourCount">Loading...</div>
+            </div>
+
+            <div class="realtime-card">
+                <h2 class="card-title">Severity Distribution</h2>
+                <div class="card-content" id="severityDistribution">Loading...</div>
+            </div>
+        </div>
+
+        <div class="live-feed" id="liveFeed">
+            <!-- Live feed items will be added here -->
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        let lastUpdateTime = null;
+
+        function startMonitoring() {
+            const keyword = document.getElementById('searchInput').value;
+            if (!keyword) return;
+
+            // Clear previous monitoring
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+            }
+
+            // Clear previous feed
+            document.getElementById('liveFeed').innerHTML = '';
+            lastUpdateTime = new Date();
+
+            // Start new monitoring
+            monitoringInterval = setInterval(() => fetchNewData(keyword), 30000); // Poll every 30 seconds
+            fetchNewData(keyword); // Initial fetch
+        }
+
+        function fetchNewData(keyword) {
+            fetch('/pain-cloud-realtime', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ keyword: keyword })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update metrics
+                updateMetrics(data);
+
+                // Update live feed
+                updateLiveFeed(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function updateMetrics(data) {
+            // Update active sources
+            const sources = new Set(data.posts.map(post => post.subreddit || 'Unknown'));
+            document.getElementById('activeSources').textContent = 
+                `${sources.size} active sources`;
+
+            // Update last hour count
+            const lastHour = data.posts.filter(post => {
+                const postTime = new Date(post.created);
+                return postTime > new Date(Date.now() - 60 * 60 * 1000);
+            }).length;
+            document.getElementById('lastHourCount').textContent = 
+                `${lastHour} pain points in the last hour`;
+
+            // Update severity distribution
+            const severityCounts = data.pain_points.reduce((acc, point) => {
+                const severity = point.analysis.match(/Severity:\s*(\d+)/)?.[1] || 'Unknown';
+                acc[severity] = (acc[severity] || 0) + 1;
+                return acc;
+            }, {});
+            const severityDistribution = Object.entries(severityCounts)
+                .sort((a, b) => b[0] - a[0])
+                .map(([severity, count]) => `Severity ${severity}: ${count}`)
+                .join('<br>');
+            document.getElementById('severityDistribution').innerHTML = severityDistribution;
+        }
+
+        function updateLiveFeed(data) {
+            const feed = document.getElementById('liveFeed');
+            const newPosts = data.posts.filter(post => {
+                const postTime = new Date(post.created);
+                return !lastUpdateTime || postTime > lastUpdateTime;
+            });
+
+            newPosts.forEach(post => {
+                const item = document.createElement('div');
+                item.className = 'feed-item';
+                
+                const title = document.createElement('div');
+                title.className = 'feed-title';
+                title.textContent = post.title;
+                
+                const content = document.createElement('div');
+                content.className = 'feed-content';
+                content.textContent = post.text.substring(0, 200) + '...';
+                
+                const meta = document.createElement('div');
+                meta.className = 'feed-meta';
+                meta.textContent = `Source: ${post.subreddit || 'Unknown'} | ${new Date(post.created).toLocaleString()}`;
+                
+                item.appendChild(title);
+                item.appendChild(content);
+                item.appendChild(meta);
+                feed.insertBefore(item, feed.firstChild);
+            });
+
+            lastUpdateTime = new Date();
+        }
+
+        // Initialize with empty state
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('activeSources').textContent = '0 sources';
+            document.getElementById('lastHourCount').textContent = '0 pain points';
+            document.getElementById('severityDistribution').textContent = 'No data available';
+        });
+    </script>
+</body>
+</html>

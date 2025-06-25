@@ -21,4 +21,5 @@ groq>=0.4.0
 feedparser
 matplotlib
 textblob
+tweepy
 

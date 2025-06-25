@@ -22,4 +22,6 @@ feedparser
 matplotlib
 textblob
 tweepy
+google-generativeai
+
 

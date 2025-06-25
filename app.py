@@ -899,6 +899,7 @@ from diskcache import Cache
 cache = Cache("radargpt_cache")
 
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
 CORS(app, supports_credentials=True, resources={
     r"/api/*": {
         "origins": ["http://localhost:5000"],
@@ -5129,7 +5130,6 @@ def get_plan_limits(plan_type):
 import stripe
 from flask import redirect
 
-stripe.api_key = app.config["STRIPE_SECRET_KEY"]
 
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
@@ -5193,6 +5193,117 @@ def razorpay_success():
     # You can verify payment here using Razorpay API if needed
     # And update the user's plan in your DB
     return "Payment successful! Your Pro plan is now active."
+
+from flask import render_template
+
+
+
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    import datetime
+    return datetime.datetime.fromtimestamp(value).strftime('%Y-%m-%d %H:%M')
+
+@app.route('/create-paypal-order', methods=['POST'])
+@login_required
+def create_paypal_order():
+    # Create PayPal order
+    auth = (app.config['PAYPAL_CLIENT_ID'], app.config['PAYPAL_CLIENT_SECRET'])
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "intent": "CAPTURE",
+        "purchase_units": [{
+            "amount": {"currency_code": "INR", "value": "499.00"},
+            "custom_id": str(current_user.id),
+            "description": "Pro Plan"
+        }],
+        "application_context": {
+            "return_url": app.config['DOMAIN'] + "/paypal-success",
+            "cancel_url": app.config['DOMAIN'] + "/paypal-cancelled"
+        }
+    }
+    # Get access token
+    r = requests.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', auth=auth, data={'grant_type': 'client_credentials'})
+    access_token = r.json()['access_token']
+    # Create order
+    r = requests.post('https://api-m.sandbox.paypal.com/v2/checkout/orders', headers={**headers, 'Authorization': f'Bearer {access_token}'}, json=data)
+    order = r.json()
+    return order
+
+@app.route('/paypal-success')
+@login_required
+def paypal_success():
+    # Handle PayPal success (mark user as pro, etc.)
+    return "Payment successful! Your Pro plan is now active."
+
+@app.route('/paypal-cancelled')
+@login_required
+def paypal_cancelled():
+    return "Payment cancelled."
+
+# Update admin dashboard to show PayPal and Razorpay payments only
+@app.route('/admin-dashboard')
+@login_required
+def admin_dashboard():
+    if current_user.email != 'knagasamanvitha@email.com':
+        return "Unauthorized", 403
+    total_users = User.query.count()
+    pro_subs = UserSubscription.query.filter_by(plan='pro').all()
+    yearly_subs = UserSubscription.query.filter_by(plan='pro_yearly').all()
+    pro_users = len(pro_subs)
+    yearly_users = len(yearly_subs)
+    free_users = total_users - pro_users - yearly_users
+    # Razorpay payments
+    import razorpay
+    razorpay_client = razorpay.Client(auth=(app.config["RAZORPAY_KEY_ID"], app.config["RAZORPAY_KEY_SECRET"]))
+    razorpay_payments = razorpay_client.payment.all({'count': 100})
+    razorpay_list = []
+    razorpay_total = 0
+    for p in razorpay_payments['items']:
+        if p['status'] == 'captured':
+            amt = int(p['amount']) / 100.0
+            razorpay_total += amt
+            razorpay_list.append({
+                'id': p['id'],
+                'email': p.get('email', ''),
+                'amount': amt,
+                'method': 'Razorpay',
+                'plan': p['notes'].get('plan', '') if 'notes' in p else '',
+                'created_at': p['created_at']
+            })
+    # PayPal payments (fetch from PayPal API)
+    paypal_total = 0
+    paypal_list = []
+    try:
+        # Get access token
+        auth = (app.config['PAYPAL_CLIENT_ID'], app.config['PAYPAL_CLIENT_SECRET'])
+        r = requests.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', auth=auth, data={'grant_type': 'client_credentials'})
+        access_token = r.json()['access_token']
+        # List transactions (for demo, fetch last 20 orders)
+        r = requests.get('https://api-m.sandbox.paypal.com/v2/checkout/orders', headers={'Authorization': f'Bearer {access_token}'})
+        if r.status_code == 200:
+            for o in r.json().get('orders', []):
+                amt = float(o['purchase_units'][0]['amount']['value'])
+                paypal_total += amt
+                paypal_list.append({
+                    'id': o['id'],
+                    'email': o.get('payer', {}).get('email_address', ''),
+                    'amount': amt,
+                    'method': 'PayPal',
+                    'plan': o['purchase_units'][0].get('description', ''),
+                    'created_at': o['create_time']
+                })
+    except Exception as e:
+        print('PayPal error:', e)
+    all_payments = sorted(razorpay_list + paypal_list, key=lambda x: x['created_at'], reverse=True)
+    total_payments = razorpay_total + paypal_total
+    return render_template('admin_dashboard.html',
+        total_users=total_users,
+        pro_users=pro_users,
+        yearly_users=yearly_users,
+        free_users=free_users,
+        total_payments=total_payments,
+        payment_list=all_payments
+    )
 
 if __name__ == "__main__":
     print("🧪 Testing News API...")

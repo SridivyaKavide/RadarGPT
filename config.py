@@ -102,9 +102,7 @@ Format as JSON array of strings.
 '''
 }
 
-STRIPE_SECRET_KEY = "sk_test_your_secret_key"
-STRIPE_PUBLISHABLE_KEY = "pk_test_your_publishable_key"
-STRIPE_PRICE_PRO = "price_your_price_id"
-RAZORPAY_KEY_ID = "rzp_test_your_key_id"
-RAZORPAY_KEY_SECRET = "your_razorpay_secret"
-DOMAIN = "http://localhost:5000" 
+
+DOMAIN = "https://yourdomain.com" 
+RAZORPAY_KEY_ID = "rzp_live_inBesRIYGuo2OX"
+RAZORPAY_KEY_SECRET = "UrImjOs9XeXHEgPTfOvlxdbs"

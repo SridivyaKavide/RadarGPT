@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Admin Dashboard</h1>
+    <hr>
+    <h3>User Stats</h3>
+    <ul>
+        <li><b>Total Users:</b> {{ total_users }}</li>
+        <li><b>Pro Users (Monthly):</b> {{ pro_users }}</li>
+        <li><b>Pro Users (Yearly):</b> {{ yearly_users }}</li>
+        <li><b>Free Users:</b> {{ free_users }}</li>
+    </ul>
+    <h3>Payments (Stripe & Razorpay)</h3>
+    <p><b>Total Payments Received:</b> ₹{{ total_payments }}</p>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Payment ID</th>
+                <th>Email</th>
+                <th>Amount (₹)</th>
+                <th>Method</th>
+                <th>Plan</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in payment_list %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.email }}</td>
+                <td>{{ p.amount }}</td>
+                <td>{{ p.method }}</td>
+                <td>{{ p.plan }}</td>
+                <td>{{ p.created_at | datetimeformat }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html> 

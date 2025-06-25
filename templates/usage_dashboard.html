@@ -514,14 +514,14 @@
             <h3><i class="fas fa-rocket"></i> Upgrade Your Plan</h3>
             <p>You're approaching your usage limits. Upgrade to Pro for unlimited access to all features.</p>
             <div class="upgrade-buttons">
-                <form action="/create-checkout-session" method="POST">
-                    <button type="submit" class="btn btn-primary">Upgrade to Pro (Stripe)</button>
-                </form>
+                <button id="paypal-button" class="btn btn-primary">Pay with PayPal</button>
                 <button id="rzp-button1" class="btn btn-success">Pay with UPI / Card (Razorpay)</button>
             </div>
         </div>
     </div>
 
+    <script src="https://www.paypal.com/sdk/js?client-id=AexgDcldjMUwprnIZ5dY0ZzreFnp42bYHLKeZ6P7RM72tR8urMs0abvNIKSzwd8630dGxhntQ7mjZaRa&currency=USD"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         // Starfield background
         const canvas = document.getElementById('star-bg-canvas');
@@ -813,6 +813,17 @@
             // Refresh stats every 5 minutes
             setInterval(loadUsageStats, 300000);
         });
+
+        document.getElementById('paypal-button').onclick = function(e){
+            fetch('/create-paypal-order', {method: 'POST'})
+              .then(res => res.json())
+              .then(data => {
+                if(data && data.links) {
+                  var approve = data.links.find(l => l.rel === 'approve');
+                  if(approve) window.location.href = approve.href;
+                }
+              });
+        };
 
         document.getElementById('rzp-button1').onclick = function(e){
             fetch('/create-razorpay-order', {method: 'POST'})

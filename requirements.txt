@@ -20,3 +20,5 @@ html5lib>=1.1
 groq>=0.4.0
 feedparser
 matplotlib
+textblob
+
